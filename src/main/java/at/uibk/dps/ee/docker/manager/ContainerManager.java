@@ -1,6 +1,6 @@
 package at.uibk.dps.ee.docker.manager;
 
-import io.vertx.core.json.JsonObject;
+import com.google.gson.JsonObject;
 
 /**
  * Class use to manage the state of the docker containers.

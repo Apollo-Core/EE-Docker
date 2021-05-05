@@ -15,6 +15,10 @@ import com.github.dockerjava.core.DockerClientBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import at.uibk.dps.ee.docker.manager.ContainerManager;
+import at.uibk.dps.ee.docker.manager.ContainerManagerExec;
+import at.uibk.dps.ee.docker.server.ContainerServer;
+import io.vertx.core.Vertx;
 
 /**
  * This class is an example usage of Docker via the java api.
@@ -29,28 +33,14 @@ public class Play {
 
   public static void main(String[] args) throws Exception {
 
-    // Instant start = Instant.now();
-    //
-    //
-    //
-    // JsonObject json = new JsonObject();
-    // json.add("firstSummand", new JsonPrimitive(3));
-    // json.add("secondSummand", new JsonPrimitive(4));
-    //
-    // command = new ArrayList<>();
-    // command.add("java");
-    // command.add("-jar");
-    // command.add("addition.jar");
-    // command.add(json.toString());
-    //
-    // DockerClient dockerClient = DockerClientBuilder.getInstance().build();
-    //
-    // System.out.println("Docker client");
-    // System.out.println(Duration.between(start, Instant.now()).toMillis());
-
-    runByExec();
-
-    // createAndStart(dockerClient);
+    Vertx vertx = Vertx.vertx();
+    ContainerManager manager = new ContainerManagerExec();
+    
+    ContainerServer server = new ContainerServer(vertx, manager);
+    
+    server.start();
+    
+    
   }
 
   /**
