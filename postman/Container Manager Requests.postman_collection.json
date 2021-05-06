@@ -1,0 +1,74 @@
+{
+	"info": {
+		"_postman_id": "3bc4ed9d-4fea-48e2-91df-0cca7cb4f439",
+		"name": "Container Manager Requests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Container Manager Pull",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"image\": \"fedor89/addition\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5055/pull/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5055",
+					"path": [
+						"pull",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:5055/run/",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstSummand\": 35,\n    \"secondSummand\": 2\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5055/run/?image=fedor89/addition",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5055",
+					"path": [
+						"run",
+						""
+					],
+					"query": [
+						{
+							"key": "image",
+							"value": "fedor89/addition"
+						}
+					]
+				},
+				"description": "Request to run an image on a deployed container."
+			},
+			"response": []
+		}
+	]
+}
