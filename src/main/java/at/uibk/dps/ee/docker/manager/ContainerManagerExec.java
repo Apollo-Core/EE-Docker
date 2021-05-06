@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
 /**
  * A {@link ContainerManager} based on the exec command (directly calling the
@@ -14,6 +16,7 @@ import com.google.gson.JsonParser;
  * 
  * @author Fedor Smirnov
  */
+@Singleton
 public class ContainerManagerExec implements ContainerManager {
 
   protected final Logger logger = LoggerFactory.getLogger(ContainerManagerExec.class);
@@ -23,6 +26,7 @@ public class ContainerManagerExec implements ContainerManager {
     private static final long serialVersionUID = 1L;
   }
 
+  @Inject
   public ContainerManagerExec() {
     this.runtime = Runtime.getRuntime();
   }

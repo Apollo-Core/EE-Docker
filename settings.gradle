@@ -1,0 +1,7 @@
+if(startParameter.projectProperties.containsKey("local")) {
+  include 'EE-Guice'
+  include 'EE-Core'
+
+  project (':EE-Core').projectDir = new File(settingsDir, "../EE-Core")
+  project (':EE-Guice').projectDir = new File(settingsDir, "../EE-Guice")
+}
