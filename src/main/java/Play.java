@@ -11,13 +11,13 @@ import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.WaitContainerResultCallback;
 import com.github.dockerjava.api.model.Frame;
-import com.github.dockerjava.core.DockerClientBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import at.uibk.dps.ee.docker.manager.ContainerManager;
 import at.uibk.dps.ee.docker.manager.ContainerManagerExec;
 import at.uibk.dps.ee.docker.server.ContainerServer;
+import ch.qos.logback.classic.util.ContextInitializer;
 import io.vertx.core.Vertx;
 
 /**
@@ -33,14 +33,16 @@ public class Play {
 
   public static void main(String[] args) throws Exception {
 
+    System.setProperty(ContextInitializer.CONFIG_FILE_PROPERTY, "./logging/config/logback.xml");
+
     Vertx vertx = Vertx.vertx();
     ContainerManager manager = new ContainerManagerExec();
-    
+
     ContainerServer server = new ContainerServer(vertx, manager);
-    
+
     server.start();
-    
-    
+
+
   }
 
   /**

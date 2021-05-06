@@ -16,8 +16,6 @@ public final class ConstantsServerContainer {
 
   // Json keys
   public static final String jsonKeyImageName = "image";
-  public static final String jsonKeyRunInput = "input";
-  public static final String jsonKeyRunResult = "result";
 
 
   /**

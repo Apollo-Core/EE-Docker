@@ -30,15 +30,9 @@ public class ReqHandlerRun implements Handler<RoutingContext> {
   public void handle(RoutingContext ctx) {
     HttpServerResponse response = ctx.response();
     JsonObject vertJson = ctx.getBodyAsJson();
-    String imageToRun = vertJson.getString(ConstantsServerContainer.jsonKeyImageName);
-    String input = vertJson.getString(ConstantsServerContainer.jsonKeyRunInput);
-    com.google.gson.JsonObject gsonJsonResult =
-        manager.runImage(imageToRun, (com.google.gson.JsonObject) JsonParser.parseString(input));
-    JsonObject responseBody = new JsonObject();
-    responseBody.put(ConstantsServerContainer.jsonKeyRunResult, gsonJsonResult.toString());
-    response.setStatusCode(200).end(responseBody.toString());
+    String imageToRun = ctx.queryParam(ConstantsServerContainer.jsonKeyImageName).get(0);
+    com.google.gson.JsonObject gsonJsonResult = manager.runImage(imageToRun,
+        (com.google.gson.JsonObject) JsonParser.parseString(vertJson.toString()));
+    response.setStatusCode(200).end(gsonJsonResult.toString());
   }
-
-
-
 }
