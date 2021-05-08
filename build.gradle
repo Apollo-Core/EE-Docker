@@ -36,15 +36,15 @@ dependencies {
     implementation 'com.github.Apollo-Core:EE-Guice:main-SNAPSHOT'
     implementation 'com.github.Apollo-Core:EE-Core:master-SNAPSHOT'
   }
-  
+
   // SDARG Dependencies
   implementation 'com.github.FedorSmirnov89:opt4j:-SNAPSHOT'
   // dependency to opendse
   implementation 'com.github.FedorSmirnov89:opendse:-SNAPSHOT'
-  
+
   // Third-party dependencies
-  
-  // guice (since we don't link to opt or opendse here)  
+
+  // guice (since we don't link to opt or opendse here)
   // https://mvnrepository.com/artifact/com.google.inject/guice
   implementation group: 'com.google.inject', name: 'guice', version: '5.0.1'
   // gson to define the format of the exchanged messages
@@ -53,7 +53,11 @@ dependencies {
   implementation 'io.vertx:vertx-web:4.0.3'
   // SLF4J and Logback for logging
   implementation group: "ch.qos.logback", name: "logback-classic", version: "1.2.3"
-  
+
+  // Lightweight docker api
+  // https://github.com/amihaiemil/docker-java-api
+  implementation 'org.glassfish:javax.json:1.1'
+  implementation 'com.amihaiemil.web:docker-java-api:0.0.13'
 }
 
 

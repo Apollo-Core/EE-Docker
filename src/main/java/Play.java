@@ -1,14 +1,15 @@
+import java.net.URI;
 import java.util.List;
 import at.uibk.dps.ee.docker.manager.ContainerManager;
-import at.uibk.dps.ee.docker.manager.ContainerManagerExec;
+import at.uibk.dps.ee.docker.manager.ContainerManagerAPI;
 import at.uibk.dps.ee.docker.server.ContainerServer;
 import ch.qos.logback.classic.util.ContextInitializer;
 import io.vertx.core.Vertx;
 
 /**
  * This class is an example usage of Docker via the java api.
- * 
- * @author Fedor Smirnov
+ *
+ * @author Fedor Smirnov, Lukas Dötlinger
  */
 public class Play {
 
@@ -19,7 +20,13 @@ public class Play {
   public static void main(String[] args) throws Exception {
     System.setProperty(ContextInitializer.CONFIG_FILE_PROPERTY, "./logging/config/logback.xml");
     Vertx vertx = Vertx.vertx();
-    ContainerManager manager = new ContainerManagerExec();
+
+    // For Windows, TCP connection is needed.
+    ContainerManager manager = new ContainerManagerAPI(URI.create("http://localhost:2375"));
+
+    // For Unix, using system sockets is recommended.
+    //ContainerManager manager = new ContainerManagerAPI("/var/run/docker.sock");
+
     ContainerServer server = new ContainerServer(vertx, manager);
     server.start();
   }
@@ -28,7 +35,7 @@ public class Play {
   /**
    * Method which creates the container with the command, starts it, retrieves the
    * logs (the result), and then stops the container.
-   * 
+   *
    * @param dockerClient: we assume that this is configured once
    */
 //  protected static void createAndStart(DockerClient dockerClient) {
