@@ -3,6 +3,7 @@ package at.uibk.dps.ee.docker.manager;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.google.gson.JsonObject;
@@ -21,6 +22,7 @@ public class ContainerManagerExec implements ContainerManager {
 
   protected final Logger logger = LoggerFactory.getLogger(ContainerManagerExec.class);
   protected final Runtime runtime;
+  protected final ContainerInputManager inputManager = new ContainerInputManager();
 
   protected class CommandException extends Exception {
     private static final long serialVersionUID = 1L;
@@ -40,13 +42,25 @@ public class ContainerManagerExec implements ContainerManager {
 
   @Override
   public JsonObject runImage(String imageName, JsonObject functionInput) {
-    String input = imageName + " " + functionInput.toString();
+    // create the temporal file on the host
+    inputManager.createHostInputFile(functionInput);
+
+    StringBuffer commandBuffer = new StringBuffer();
+    String hostPath = Path.of("").toAbsolutePath().toString();
+    commandBuffer.append(ConstantsManager.dockerCommandRun).append(hostPath).append('/')
+        .append(ConstantsManager.inputFileName).append(':')
+        .append(ConstantsManager.containerSrcPath).append('/')
+        .append(ConstantsManager.inputFileName).append(' ');
+
+    String input = imageName;
     try {
-      String runResult = executeCommand(ConstantsManager.dockerCommandRun, input);
+      String runResult = executeCommand(commandBuffer.toString(), input);
       return (JsonObject) JsonParser.parseString(runResult);
-    }catch(CommandException failedCommand) {
+    } catch (CommandException failedCommand) {
       logger.error("Image run failed. Image {}. Input {}.", imageName, input, failedCommand);
       throw new IllegalStateException(failedCommand);
+    }finally {
+      inputManager.deleteHostInputFile();
     }
   }
 
@@ -58,7 +72,7 @@ public class ContainerManagerExec implements ContainerManager {
   protected void pullFromDocker(String imageName) {
     try {
       executeCommand(ConstantsManager.dockerCommandPull, imageName);
-    }catch(CommandException failedCommand) {
+    } catch (CommandException failedCommand) {
       logger.error("Image pull failed. Image {}", imageName, failedCommand);
       throw new IllegalStateException(failedCommand);
     }
@@ -93,10 +107,10 @@ public class ContainerManagerExec implements ContainerManager {
   protected String executeCommand(String command, String input) throws CommandException {
     try {
       Process pr = runtime.exec(command + input);
-      int exitCode = pr.waitFor();
-      if (exitCode != 0) {
-        throw new CommandException();
-      }
+      // int exitCode = pr.waitFor();
+      // if (exitCode != 0) {
+      // throw new CommandException();
+      // }
       BufferedReader buf = new BufferedReader(new InputStreamReader(pr.getInputStream()));
       StringBuffer buffer = new StringBuffer();
       String line = buf.readLine();
@@ -105,7 +119,7 @@ public class ContainerManagerExec implements ContainerManager {
         line = buf.readLine();
       }
       return buffer.toString();
-    } catch (IOException | InterruptedException exc) {
+    } catch (IOException exc) {
       logger.error("Exception executing command " + command + " with input " + input, exc);
       throw new IllegalStateException(exc);
     }
