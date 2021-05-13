@@ -23,12 +23,12 @@ public class Play {
     Vertx vertx = Vertx.vertx();
 
     // For Windows, TCP connection is needed.
-    ContainerManager manager = new ContainerManagerAPI(URI.create("http://localhost:2375"));
+    //ContainerManager manager = new ContainerManagerAPI(URI.create("http://localhost:2375"));
 
     // For Unix, using system sockets is recommended.
     //ContainerManager manager = new ContainerManagerAPI("/var/run/docker.sock");
 
-    //ContainerManager manager = new ContainerManagerDockerAPI();
+    ContainerManager manager = new ContainerManagerDockerAPI();
 
     ContainerServer server = new ContainerServer(vertx, manager);
     server.start();

@@ -1,8 +1,7 @@
 package at.uibk.dps.ee.docker.manager;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.async.ResultCallback.Adapter;
-import com.github.dockerjava.api.async.ResultCallbackTemplate;
+import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.PullResponseItem;
@@ -52,7 +51,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
   @Override
   public void pullImage(String imageName) {
-    Adapter<PullResponseItem> res = this.client.pullImageCmd(imageName).start();
+    ResultCallback.Adapter<PullResponseItem> res = this.client.pullImageCmd(imageName).start();
 
     try {
       res.awaitCompletion();
@@ -68,22 +67,47 @@ public class ContainerManagerDockerAPI implements ContainerManager {
       .exec();
 
     this.client.startContainerCmd(container.getId()).exec();
-    this.client.waitContainerCmd(container.getId()).start();
-
-    ResultCallbackTemplate<?, Frame> log = this.client.logContainerCmd(container.getId())
-      .withStdOut(true)
-      .start();
 
     try {
-      log.awaitCompletion();
-    } catch (Exception e) {
+      this.client.waitContainerCmd(container.getId()).start().awaitCompletion();
+    } catch (InterruptedException e) {
       e.printStackTrace();
     }
+
+    StringBuilder stringBuilder = new StringBuilder();
+    final LogReader callback = new LogReader(stringBuilder);
+
+    try {
+      this.client.logContainerCmd(container.getId())
+        .withStdOut(true)
+        .withStdErr(true)
+        .withTailAll()
+        .exec(callback)
+        .awaitCompletion();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+    String log = callback.builder.toString();
 
     this.client.removeContainerCmd(container.getId())
       .withForce(true)
       .exec();
 
-    return (JsonObject) JsonParser.parseString(log.toString());
+    return (JsonObject) JsonParser.parseString(log);
+  }
+
+  private static class LogReader extends ResultCallback.Adapter<Frame> {
+    public StringBuilder builder;
+
+    public LogReader(StringBuilder builder) {
+        this.builder = builder;
+    }
+
+    @Override
+    public void onNext(Frame item) {
+        builder.append(new String(item.getPayload()));
+        super.onNext(item);
+    }
   }
 }
