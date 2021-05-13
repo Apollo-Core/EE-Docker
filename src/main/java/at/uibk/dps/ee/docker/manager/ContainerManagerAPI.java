@@ -28,9 +28,9 @@ import com.google.inject.Singleton;
 @Singleton
 public class ContainerManagerAPI implements ContainerManager {
 
-  protected final Docker docker;
-  protected final Images images;
-  protected final Containers containers;
+  private final Docker docker;
+  private final Images images;
+  private final Containers containers;
 
   @Inject
   public ContainerManagerAPI(String unix_pathname) {
