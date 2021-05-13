@@ -17,6 +17,12 @@ import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+/**
+ * A {@link ContainerManager} based on the `docker-java` API.
+ * (https://github.com/docker-java/docker-java).
+ *
+ * @author Lukas Dötlinger
+ */
 @Singleton
 public class ContainerManagerDockerAPI implements ContainerManager {
 
