@@ -3,6 +3,7 @@ import java.util.List;
 import at.uibk.dps.ee.docker.manager.ContainerManager;
 import at.uibk.dps.ee.docker.manager.ContainerManagerAPI;
 import at.uibk.dps.ee.docker.manager.ContainerManagerDockerAPI;
+import at.uibk.dps.ee.docker.manager.ContainerManagerExec;
 import at.uibk.dps.ee.docker.server.ContainerServer;
 import ch.qos.logback.classic.util.ContextInitializer;
 import io.vertx.core.Vertx;
@@ -29,6 +30,8 @@ public class Play {
     //ContainerManager manager = new ContainerManagerAPI("/var/run/docker.sock");
 
     ContainerManager manager = new ContainerManagerDockerAPI();
+
+    //ContainerManager manager = new ContainerManagerExec();
 
     ContainerServer server = new ContainerServer(vertx, manager);
     server.start();
