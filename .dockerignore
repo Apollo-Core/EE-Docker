@@ -1,0 +1,16 @@
+# Git
+.git/
+.gitignore
+
+# IDE's
+.vscode/
+
+# Gradle
+.gradle/
+bin/
+build/
+
+# Java .class files
+**/*.class
+
+postman/

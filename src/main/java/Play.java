@@ -1,5 +1,3 @@
-package at.uibk.dps.ee.docker;
-
 import java.net.URI;
 import java.util.List;
 import at.uibk.dps.ee.docker.manager.ContainerManager;
@@ -26,12 +24,12 @@ public class Play {
     Vertx vertx = Vertx.vertx();
 
     // For Windows, TCP connection is needed.
-    //ContainerManager manager = new ContainerManagerAPI(URI.create("http://localhost:2375"));
+    ContainerManager manager = new ContainerManagerAPI(URI.create("http://host.docker.internal:2375"));
 
     // For Unix, using system sockets is recommended.
     //ContainerManager manager = new ContainerManagerAPI("/var/run/docker.sock");
 
-    ContainerManager manager = new ContainerManagerDockerAPI();
+    //ContainerManager manager = new ContainerManagerDockerAPI();
 
     //ContainerManager manager = new ContainerManagerExec();
 

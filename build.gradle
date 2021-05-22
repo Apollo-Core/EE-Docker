@@ -4,19 +4,22 @@ buildscript {
 	}
 }
 
-apply plugin: 'java'
-apply plugin: 'application'
-apply plugin: 'eclipse'
-apply plugin: 'maven'
-apply plugin: 'jacoco'
+plugins {
+  id 'java'
+  id 'application'
+  id 'eclipse'
+  id 'maven'
+  id 'jacoco'
+}
+
+sourceCompatibility = 1.8
+
 // for compliance with higher Java versions
 jacoco {
-		toolVersion = "0.8.5"
-	}
+	toolVersion = "0.8.5"
+}
+
 // to use GitHub repositories as dependencies
-
-
-
 repositories {
 	mavenCentral()
 	maven {
@@ -25,7 +28,6 @@ repositories {
 }
 
 dependencies {
-
   // Apollo Dependencies
   if (project.hasProperty("local")) {
     implementation project (':EE-Guice')
@@ -60,4 +62,20 @@ dependencies {
   // Official Docker API
   implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.2.8'
   implementation 'com.github.docker-java:docker-java-core:3.2.8'
+}
+
+jar {
+  manifest {
+    attributes 'Main-Class': 'Play'
+  }
+  from {
+    configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+  }
+  exclude 'META-INF/*.RSA'
+  exclude 'META-INF/*.SF'
+  exclude 'META-INF/*.DSA'
+}
+
+application {
+  mainClass = 'Play'
 }
