@@ -3,6 +3,8 @@ package at.uibk.dps.ee.docker.manager;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.json.Json;
 
@@ -18,6 +20,13 @@ import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+
 
 /**
  * A {@link ContainerManager} based on the Docker API by amihaiemil
@@ -31,6 +40,8 @@ public class ContainerManagerAPI implements ContainerManager {
   private final Docker docker;
   private final Images images;
   private final Containers containers;
+
+  private Map<String, Integer> functions = new HashMap<>();
 
   @Inject
   public ContainerManagerAPI(String unix_pathname) {
@@ -58,22 +69,64 @@ public class ContainerManagerAPI implements ContainerManager {
   }
 
   @Override
-  public JsonObject runImage(String imageName, JsonObject functionInput) {
-    try {
-      final Container container = containers.create(Json.createObjectBuilder()
-        .add("Image", imageName)
-        .add("Cmd", functionInput.toString()).build());
+  public JsonObject runFunction(String imageName, JsonObject functionInput) {
+    final int port = functions.get(imageName);
 
-      container.start();
-      container.waitOn("not-running");
-      final String output = container.logs().stdout().toString();
-      container.remove();
+    try (CloseableHttpClient client = HttpClients.createDefault()) {
 
-      return (JsonObject) JsonParser.parseString(output);
+      HttpGet request = new HttpGet("http://host.docker.internal:" + port);
+      request.setHeader("Accept", "application/json");
+      request.setHeader("Content-type", "application/json");
+      request.setEntity(new StringEntity(functionInput.toString()));
+
+      CloseableHttpResponse response = client.execute(request);
+      final String responseString = EntityUtils.toString(response.getEntity());
+
+      return (JsonObject) JsonParser.parseString(responseString);
     } catch (Exception e) {
       e.printStackTrace();
     }
+
     return new JsonObject();
+  }
+
+  @Override
+  public String startContainer(String imageName) {
+    try {
+      final int port = 8800 + functions.size();
+
+      final Container container = containers.create(Json.createObjectBuilder()
+        .add("Image", imageName)
+        //.add("ExposedPorts", Json.createObjectBuilder()
+        //  .add("8080/tcp", JsonValue.EMPTY_JSON_OBJECT)
+        //  .build())
+        //.add("HostConfig", Json.createObjectBuilder()
+        //  .add("PortBindings", Json.createObjectBuilder()
+        //    .add("8080/tcp", Json.createObjectBuilder()
+        //      .add("HostPort", port)
+        //      .build())
+        //    .build())
+        //  .build())
+        .build());
+
+      container.start();
+      functions.put(imageName, port);
+
+      return container.containerId();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  @Override
+  public void removeContainer(String containerId) {
+    final Container container = containers.get(containerId);
+    try {
+      container.remove();
+    } catch (UnexpectedResponseException | IOException e) {
+      e.printStackTrace();
+    }
   }
 
 }

@@ -4,7 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import at.uibk.dps.ee.docker.manager.ContainerManager;
 import at.uibk.dps.ee.docker.server.routes.ReqHandlerPull;
+import at.uibk.dps.ee.docker.server.routes.ReqHandlerRemove;
 import at.uibk.dps.ee.docker.server.routes.ReqHandlerRun;
+import at.uibk.dps.ee.docker.server.routes.ReqHandlerStart;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
@@ -15,8 +17,8 @@ import io.vertx.ext.web.handler.BodyHandler;
 /**
  * The {@link ContainerServer} is used as an access point to the manager of the
  * local Docker containers.
- * 
- * @author Fedor Smirnov
+ *
+ * @author Fedor Smirnov, Lukas Dötlinger
  */
 public class ContainerServer {
 
@@ -28,7 +30,7 @@ public class ContainerServer {
 
   /**
    * Default constructor.
-   * 
+   *
    * @param vertx the vertx instance
    */
   public ContainerServer(Vertx vertx, ContainerManager manager) {
@@ -37,7 +39,6 @@ public class ContainerServer {
     this.manager = manager;
     configureRoutes();
   }
-
 
   /**
    * Configures the handlers for the routes served by the server.
@@ -49,9 +50,19 @@ public class ContainerServer {
     pullRoute.blockingHandler(handlerPull::handle);
 
     final Route runRoute =
-        router.route(ConstantsServerContainer.routeRunImage).method(HttpMethod.POST).handler(BodyHandler.create());
+        router.route(ConstantsServerContainer.routeRunFunction).method(HttpMethod.POST).handler(BodyHandler.create());
     ReqHandlerRun handlerRun = new ReqHandlerRun(manager);
     runRoute.blockingHandler(handlerRun::handle);
+
+    final Route startRoute =
+        router.route(ConstantsServerContainer.routeStartContainer).method(HttpMethod.POST).handler(BodyHandler.create());
+    ReqHandlerStart handlerStart = new ReqHandlerStart(manager);
+    startRoute.blockingHandler(handlerStart::handle);
+
+    final Route removeRoute =
+        router.route(ConstantsServerContainer.routeRemoveContainer).method(HttpMethod.POST).handler(BodyHandler.create());
+    ReqHandlerRemove handlerRemove = new ReqHandlerRemove(manager);
+    removeRoute.blockingHandler(handlerRemove::handle);
   }
 
   public void start() {

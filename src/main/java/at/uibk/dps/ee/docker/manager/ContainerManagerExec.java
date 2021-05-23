@@ -13,9 +13,10 @@ import com.google.inject.Singleton;
 /**
  * A {@link ContainerManager} based on the exec command (directly calling the
  * docker commands).
- * 
+ *
  * @author Fedor Smirnov
  */
+@Deprecated
 @Singleton
 public class ContainerManagerExec implements ContainerManager {
 
@@ -38,7 +39,6 @@ public class ContainerManagerExec implements ContainerManager {
     }
   }
 
-  @Override
   public JsonObject runImage(String imageName, JsonObject functionInput) {
     String input = imageName + " " + functionInput.toString();
     try {
@@ -52,7 +52,7 @@ public class ContainerManagerExec implements ContainerManager {
 
   /**
    * Pulls the image with the given name from DockerHub
-   * 
+   *
    * @param imageName
    */
   protected void pullFromDocker(String imageName) {
@@ -66,7 +66,7 @@ public class ContainerManagerExec implements ContainerManager {
 
   /**
    * Checks whether the image with the given name exists.
-   * 
+   *
    * @param imageName
    * @return
    */
@@ -82,7 +82,7 @@ public class ContainerManagerExec implements ContainerManager {
   /**
    * Executed the given command with the given input and returns the command
    * output as a string.
-   * 
+   *
    * @param command the command to execute
    * @param input the command input
    * @return the output of the command execution
@@ -109,5 +109,23 @@ public class ContainerManagerExec implements ContainerManager {
       logger.error("Exception executing command " + command + " with input " + input, exc);
       throw new IllegalStateException(exc);
     }
+  }
+
+  @Override
+  public JsonObject runFunction(String imageName, JsonObject functionInput) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public String startContainer(String imageName) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public void removeContainer(String containerName) {
+    // TODO Auto-generated method stub
+
   }
 }

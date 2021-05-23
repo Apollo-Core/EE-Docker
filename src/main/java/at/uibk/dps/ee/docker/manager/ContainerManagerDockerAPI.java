@@ -66,7 +66,6 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     }
   }
 
-  @Override
   public JsonObject runImage(String imageName, JsonObject functionInput) {
     CreateContainerResponse container = this.client.createContainerCmd(imageName)
       .withCmd(functionInput.toString())
@@ -115,5 +114,23 @@ public class ContainerManagerDockerAPI implements ContainerManager {
         builder.append(new String(item.getPayload()));
         super.onNext(item);
     }
+  }
+
+  @Override
+  public JsonObject runFunction(String imageName, JsonObject functionInput) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public String startContainer(String imageName) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public void removeContainer(String containerName) {
+    // TODO Auto-generated method stub
+
   }
 }

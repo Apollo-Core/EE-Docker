@@ -4,13 +4,13 @@ import org.opt4j.core.config.annotations.Info;
 import org.opt4j.core.config.annotations.Order;
 import org.opt4j.core.start.Constant;
 import at.uibk.dps.ee.docker.manager.ContainerManager;
-import at.uibk.dps.ee.docker.manager.ContainerManagerExec;
+import at.uibk.dps.ee.docker.manager.ContainerManagerAPI;
 import at.uibk.dps.ee.docker.server.ServerStarter;
 import at.uibk.dps.ee.guice.modules.FunctionModule;
 
 /**
  * Module for the configuration of the local modules.
- * 
+ *
  * @author Fedor Smirnov
  */
 public class LocalContainersModule extends FunctionModule {
@@ -22,7 +22,7 @@ public class LocalContainersModule extends FunctionModule {
 
   @Override
   protected void config() {
-    bind(ContainerManager.class).to(ContainerManagerExec.class);
+    bind(ContainerManager.class).to(ContainerManagerAPI.class);
     bind(ServerStarter.class).asEagerSingleton();
   }
 

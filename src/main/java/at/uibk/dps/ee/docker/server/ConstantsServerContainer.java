@@ -2,7 +2,7 @@ package at.uibk.dps.ee.docker.server;
 
 /**
  * Class containing the constants relevant for the Apollo server.
- * 
+ *
  * @author Fedor Smirnov
  */
 public final class ConstantsServerContainer {
@@ -12,10 +12,13 @@ public final class ConstantsServerContainer {
 
   // Route names
   public static final String routePullImage = "/pull/";
-  public static final String routeRunImage = "/run/";
+  public static final String routeRunFunction = "/run/";
+  public static final String routeStartContainer = "/start/";
+  public static final String routeRemoveContainer = "/remove/";
 
   // Json keys
   public static final String jsonKeyImageName = "image";
+  public static final String jsonKeyContainer = "container_id";
 
 
   /**
