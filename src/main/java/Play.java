@@ -15,7 +15,7 @@ import io.vertx.core.Vertx;
  */
 public class Play {
 
-  protected static final String imageName = "fedor89/addition";;
+  protected static final String imageName = "fedor89/addition";
   protected static final String containerName = "additionContainer7";
   protected static List<String> command;
 
