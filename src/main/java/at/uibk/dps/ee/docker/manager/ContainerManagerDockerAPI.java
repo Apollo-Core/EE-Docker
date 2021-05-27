@@ -3,7 +3,11 @@ package at.uibk.dps.ee.docker.manager;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Frame;
+import com.github.dockerjava.api.model.HostConfig;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
@@ -31,9 +35,9 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   private final DockerClient client;
 
   @Inject
-  public ContainerManagerDockerAPI() {
+  public ContainerManagerDockerAPI(String uri) {
     this.config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-      .withDockerHost("tcp://localhost:2375")
+      .withDockerHost("tcp://" + uri)
       .withDockerTlsVerify(false)
       .build();
 
@@ -124,8 +128,23 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
   @Override
   public String startContainer(String imageName) {
-    // TODO Auto-generated method stub
-    return null;
+    HostConfig hostConfig = HostConfig.newHostConfig()
+      .withPortBindings(PortBinding.parse("127.0.0.1:8801:8080/tcp"));
+
+    CreateContainerResponse container = this.client.createContainerCmd(imageName)
+      .withExposedPorts(ExposedPort.tcp(8080))
+      .withHostConfig(hostConfig)
+      .exec();
+
+    this.client.startContainerCmd(container.getId()).exec();
+
+    try {
+      this.client.waitContainerCmd(container.getId()).start().awaitCompletion();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+    return container.getId();
   }
 
   @Override
