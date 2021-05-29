@@ -2,6 +2,7 @@ package at.uibk.dps.ee.docker.manager;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
@@ -41,11 +42,14 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   private final DockerClientConfig config;
   private final DockerHttpClient clientHttp;
   private final DockerClient client;
+  private final String hostUri;
 
   private Map<String, Integer> functions = new HashMap<>();
 
   @Inject
   public ContainerManagerDockerAPI(String uri) {
+    this.hostUri = uri;
+
     this.config = DefaultDockerClientConfig.createDefaultConfigBuilder()
       .withDockerHost("tcp://" + uri)
       .withDockerTlsVerify(false)
@@ -82,11 +86,15 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
   @Override
   public JsonObject runFunction(String imageName, JsonObject functionInput) {
-    final int port = functions.get(imageName);
+    Optional<Integer> port = Optional.ofNullable(this.functions.get(imageName));
+
+    if (port.isEmpty()) {
+      return JsonParser.parseString("{ \"error\": \"Function not available!\" }").getAsJsonObject();
+    }
 
     try (CloseableHttpClient client = HttpClients.createDefault()) {
 
-      HttpGet request = new HttpGet("http://localhost:" + port);
+      HttpGet request = new HttpGet("http://" + this.hostUri + ":" + port.get());
       request.setHeader("Accept", "application/json");
       request.setHeader("Content-type", "application/json");
       request.setEntity(new StringEntity(functionInput.toString()));
