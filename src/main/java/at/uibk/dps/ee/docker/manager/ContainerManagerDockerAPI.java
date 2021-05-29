@@ -1,13 +1,14 @@
 package at.uibk.dps.ee.docker.manager;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.PortBinding;
-import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
@@ -21,6 +22,13 @@ import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+
 /**
  * A {@link ContainerManager} based on the `docker-java` API.
  * (https://github.com/docker-java/docker-java).
@@ -33,6 +41,8 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   private final DockerClientConfig config;
   private final DockerHttpClient clientHttp;
   private final DockerClient client;
+
+  private Map<String, Integer> functions = new HashMap<>();
 
   @Inject
   public ContainerManagerDockerAPI(String uri) {
@@ -70,86 +80,57 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     }
   }
 
-  public JsonObject runImage(String imageName, JsonObject functionInput) {
-    CreateContainerResponse container = this.client.createContainerCmd(imageName)
-      .withCmd(functionInput.toString())
-      .exec();
-
-    this.client.startContainerCmd(container.getId()).exec();
-
-    try {
-      this.client.waitContainerCmd(container.getId()).start().awaitCompletion();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-
-    StringBuilder stringBuilder = new StringBuilder();
-    final LogReader callback = new LogReader(stringBuilder);
-
-    try {
-      this.client.logContainerCmd(container.getId())
-        .withStdOut(true)
-        .withStdErr(true)
-        .withTailAll()
-        .exec(callback)
-        .awaitCompletion();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-
-    String log = callback.builder.toString();
-
-    this.client.removeContainerCmd(container.getId())
-      .withForce(true)
-      .exec();
-
-    return (JsonObject) JsonParser.parseString(log);
-  }
-
-  private static class LogReader extends ResultCallback.Adapter<Frame> {
-    public StringBuilder builder;
-
-    public LogReader(StringBuilder builder) {
-        this.builder = builder;
-    }
-
-    @Override
-    public void onNext(Frame item) {
-        builder.append(new String(item.getPayload()));
-        super.onNext(item);
-    }
-  }
-
   @Override
   public JsonObject runFunction(String imageName, JsonObject functionInput) {
-    // TODO Auto-generated method stub
-    return null;
+    final int port = functions.get(imageName);
+
+    try (CloseableHttpClient client = HttpClients.createDefault()) {
+
+      HttpGet request = new HttpGet("http://localhost:" + port);
+      request.setHeader("Accept", "application/json");
+      request.setHeader("Content-type", "application/json");
+      request.setEntity(new StringEntity(functionInput.toString()));
+
+      CloseableHttpResponse response = client.execute(request);
+      final String responseString = EntityUtils.toString(response.getEntity());
+
+      return (JsonObject) JsonParser.parseString(responseString);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    return new JsonObject();
   }
 
   @Override
   public String startContainer(String imageName) {
+    final int port = 8800 + functions.size();
+
     HostConfig hostConfig = HostConfig.newHostConfig()
-      .withPortBindings(PortBinding.parse("127.0.0.1:8801:8080/tcp"));
+      .withPortBindings(PortBinding.parse("127.0.0.1:" + port + ":8080/tcp"));
 
     CreateContainerResponse container = this.client.createContainerCmd(imageName)
       .withExposedPorts(ExposedPort.tcp(8080))
       .withHostConfig(hostConfig)
       .exec();
 
-    this.client.startContainerCmd(container.getId()).exec();
+    String containerId = container.getId();
+    this.client.startContainerCmd(containerId).exec();
 
     try {
-      this.client.waitContainerCmd(container.getId()).start().awaitCompletion();
-    } catch (InterruptedException e) {
+      this.client.waitContainerCmd(container.getId()).start().awaitStarted();
+    } catch (Exception e) {
       e.printStackTrace();
     }
 
-    return container.getId();
+    this.functions.put(imageName, port);
+    return containerId;
   }
 
   @Override
-  public void removeContainer(String containerName) {
-    // TODO Auto-generated method stub
-
+  public void removeContainer(String containerId) {
+    this.client.removeContainerCmd(containerId)
+      .withForce(true)
+      .exec();
   }
 }
