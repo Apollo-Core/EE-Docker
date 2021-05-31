@@ -47,11 +47,11 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   private Map<String, Integer> functions = new HashMap<>();
 
   @Inject
-  public ContainerManagerDockerAPI(String uri) {
+  public ContainerManagerDockerAPI(String uri, int port) {
     this.hostUri = uri;
 
     this.config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-      .withDockerHost("tcp://" + uri)
+      .withDockerHost("tcp://" + uri + ":" + port)
       .withDockerTlsVerify(false)
       .build();
 
@@ -115,7 +115,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     final int port = 8800 + functions.size();
 
     HostConfig hostConfig = HostConfig.newHostConfig()
-      .withPortBindings(PortBinding.parse("127.0.0.1:" + port + ":8080/tcp"));
+      .withPortBindings(PortBinding.parse(port + ":8080/tcp"));
 
     CreateContainerResponse container = this.client.createContainerCmd(imageName)
       .withExposedPorts(ExposedPort.tcp(8080))

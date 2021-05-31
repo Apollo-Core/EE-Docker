@@ -1,6 +1,4 @@
-import java.net.URI;
 import at.uibk.dps.ee.docker.manager.ContainerManager;
-import at.uibk.dps.ee.docker.manager.ContainerManagerAPI;
 import at.uibk.dps.ee.docker.manager.ContainerManagerDockerAPI;
 import at.uibk.dps.ee.docker.server.ContainerServer;
 import ch.qos.logback.classic.util.ContextInitializer;
@@ -23,7 +21,7 @@ public class Play {
     // For Unix, using system sockets is recommended.
     //ContainerManager manager = new ContainerManagerAPI("/var/run/docker.sock");
 
-    ContainerManager manager = new ContainerManagerDockerAPI("localhost:2375");
+    ContainerManager manager = new ContainerManagerDockerAPI("localhost", 2375);
 
     ContainerServer server = new ContainerServer(vertx, manager);
     server.start();
