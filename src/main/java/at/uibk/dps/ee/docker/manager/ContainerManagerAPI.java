@@ -2,14 +2,12 @@ package at.uibk.dps.ee.docker.manager;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.json.Json;
-import javax.json.JsonObjectBuilder;
-
 import com.amihaiemil.docker.Container;
 import com.amihaiemil.docker.Containers;
 import com.amihaiemil.docker.Docker;
@@ -45,18 +43,34 @@ public class ContainerManagerAPI implements ContainerManager {
 
   private Map<String, Integer> functions = new HashMap<>();
 
+  /**
+   * Injection constructor.
+   */
   @Inject
-  public ContainerManagerAPI(String unix_pathname) {
-    this.docker = new UnixDocker(new File(unix_pathname));
+  public ContainerManagerAPI() {
+    this.docker = getDocker();
     this.images = docker.images();
     this.containers = docker.containers();
   }
 
-  @Inject
-  public ContainerManagerAPI(URI uri) {
-    this.docker = new TcpDocker(uri);
-    this.images = docker.images();
-    this.containers = docker.containers();
+  /**
+   * Creates the docker object using the host address matching the current
+   * operating system.
+   * 
+   * @return the docker object using the host address matching the current
+   *         operating system
+   */
+  protected final Docker getDocker() {
+    if (System.getProperty("os.name").equals("Windows")) {
+      try {
+        return new TcpDocker(new URI(ConstantsManager.dockerHostWindows));
+      } catch (URISyntaxException e) {
+        throw new IllegalStateException("Incorrect Docker Host for Windows.", e);
+      }
+    } else {
+      System.out.println("we are on linux");
+      return new UnixDocker(new File(ConstantsManager.dockerHostUnix));
+    }
   }
 
   @Override
@@ -97,36 +111,32 @@ public class ContainerManagerAPI implements ContainerManager {
     try {
       final int port = 8800 + functions.size();
 
-      final javax.json.JsonObject hostConfig = Json.createObjectBuilder()
-        .add("PortBindings", Json.createObjectBuilder()
-          .add("8080/tcp", Json.createArrayBuilder().add(Json.createObjectBuilder()
-            .add("HostPort", port)
-            .add("HostIp", "127.0.0.1")
-            .build()))
-         .build())
-        .build();
+      final javax.json.JsonObject hostConfig = Json.createObjectBuilder().add("PortBindings",
+          Json.createObjectBuilder().add("8080/tcp", Json.createArrayBuilder().add(
+              Json.createObjectBuilder().add("HostPort", port).add("HostIp", "127.0.0.1").build()))
+              .build())
+          .build();
 
-      final javax.json.JsonObject exposedPorts = Json.createObjectBuilder()
-        .add("8080/tcp", Json.createObjectBuilder().build())
-        .build();
+      final javax.json.JsonObject exposedPorts =
+          Json.createObjectBuilder().add("8080/tcp", Json.createObjectBuilder().build()).build();
 
-      final Container container = containers.create(Json.createObjectBuilder()
-        .add("Image", imageName)
-        //.add("ExposedPorts", Json.createParser(new StringReader("{\"8080/tcp\": { }}")).getObject())
-        //.add("HostConfig", Json.createParser(new StringReader("\"PortBindings\": {\"8080/tcp\": [{ \"HostPort\": \"8801\"}]}")).getObject())
-        //.add("ExposedPorts", Json.createObjectBuilder()
-        //  .add("8080/tcp", JsonValue.EMPTY_JSON_OBJECT)
-        //  .build())
-        //.add("HostConfig", Json.createObjectBuilder()
-        //  .add("PortBindings", Json.createObjectBuilder()
-        //    .add("8080/tcp", Json.createObjectBuilder()
-        //      .add("HostPort", port)
-        //      .build())
-        //    .build())
-        //  .build())
-        .add("ExposedPorts", exposedPorts)
-        .add("HostConfig", hostConfig)
-        .build());
+      final Container container =
+          containers.create(Json.createObjectBuilder().add("Image", imageName)
+              // .add("ExposedPorts", Json.createParser(new StringReader("{\"8080/tcp\": {
+              // }}")).getObject())
+              // .add("HostConfig", Json.createParser(new StringReader("\"PortBindings\":
+              // {\"8080/tcp\": [{ \"HostPort\": \"8801\"}]}")).getObject())
+              // .add("ExposedPorts", Json.createObjectBuilder()
+              // .add("8080/tcp", JsonValue.EMPTY_JSON_OBJECT)
+              // .build())
+              // .add("HostConfig", Json.createObjectBuilder()
+              // .add("PortBindings", Json.createObjectBuilder()
+              // .add("8080/tcp", Json.createObjectBuilder()
+              // .add("HostPort", port)
+              // .build())
+              // .build())
+              // .build())
+              .add("ExposedPorts", exposedPorts).add("HostConfig", hostConfig).build());
 
       container.start();
       functions.put(imageName, port);
