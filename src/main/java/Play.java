@@ -1,6 +1,5 @@
 import at.uibk.dps.ee.docker.manager.ContainerManager;
 import at.uibk.dps.ee.docker.manager.ContainerManagerAPI;
-import at.uibk.dps.ee.docker.manager.ContainerManagerDockerAPI;
 import at.uibk.dps.ee.docker.server.ContainerServer;
 import ch.qos.logback.classic.util.ContextInitializer;
 import io.vertx.core.Vertx;
@@ -18,10 +17,16 @@ public class Play {
     Vertx vertx = Vertx.vertx();
 
     // For Windows, TCP connection is needed.
-    //ContainerManager manager = new ContainerManagerAPI(URI.create("http://localhost:2375"));
+//    ContainerManager manager = new ContainerManagerAPI(ConstantsManager.localhost,
+//      ConstantsManager.defaultDockerHTTPPort);
 
     // For Unix, using system sockets is recommended.
     ContainerManager manager = new ContainerManagerAPI();//"/var/run/docker.sock");
+    //ContainerManager manager = new ContainerManagerAPI(ConstantsManager.defaultDockerUnixSocketLocation,
+    //  ConstantsManager.defaultDockerInternalUri);
+
+    //ContainerManager manager = new ContainerManagerDockerAPI(ConstantsManager.defaultDockerInternalUri,
+    //  ConstantsManager.defaultDockerHTTPPort);
 
 //    ContainerManager manager = new ContainerManagerDockerAPI("localhost", 2375);
 //

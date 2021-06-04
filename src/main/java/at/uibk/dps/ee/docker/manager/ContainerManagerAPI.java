@@ -2,12 +2,14 @@ package at.uibk.dps.ee.docker.manager;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
-
+import java.util.Optional;
 import javax.json.Json;
+import javax.json.JsonReader;
+import javax.json.JsonValue;
 import com.amihaiemil.docker.Container;
 import com.amihaiemil.docker.Containers;
 import com.amihaiemil.docker.Docker;
@@ -40,6 +42,7 @@ public class ContainerManagerAPI implements ContainerManager {
   private final Docker docker;
   private final Images images;
   private final Containers containers;
+  private final String hostUri;
 
   private Map<String, Integer> functions = new HashMap<>();
 
@@ -51,6 +54,7 @@ public class ContainerManagerAPI implements ContainerManager {
     this.docker = getDocker();
     this.images = docker.images();
     this.containers = docker.containers();
+    this.hostUri = ConstantsManager.defaultDockerInternalUri;
   }
 
   /**
@@ -62,14 +66,11 @@ public class ContainerManagerAPI implements ContainerManager {
    */
   protected final Docker getDocker() {
     if (System.getProperty("os.name").equals("Windows")) {
-      try {
-        return new TcpDocker(new URI(ConstantsManager.dockerHostWindows));
-      } catch (URISyntaxException e) {
-        throw new IllegalStateException("Incorrect Docker Host for Windows.", e);
-      }
+      return new TcpDocker(
+          URI.create("http://" + hostUri + ":" + ConstantsManager.defaultDockerHTTPPort));
     } else {
       System.out.println("we are on linux");
-      return new UnixDocker(new File(ConstantsManager.dockerHostUnix));
+      return new UnixDocker(new File(ConstantsManager.defaultDockerUnixSocketLocation));
     }
   }
 
@@ -86,11 +87,16 @@ public class ContainerManagerAPI implements ContainerManager {
 
   @Override
   public JsonObject runFunction(String imageName, JsonObject functionInput) {
-    final int port = functions.get(imageName);
+    Optional<Integer> port = Optional.ofNullable(this.functions.get(imageName));
+
+    if (port.isEmpty()) {
+      return JsonParser.parseString("{ \"error\": \"Function not available!\" }").getAsJsonObject();
+    }
 
     try (CloseableHttpClient client = HttpClients.createDefault()) {
 
-      HttpGet request = new HttpGet("http://host.docker.internal:" + port);
+      
+      HttpGet request = new HttpGet("http://" + "localhost" + ":" + port.get());
       request.setHeader("Accept", "application/json");
       request.setHeader("Content-type", "application/json");
       request.setEntity(new StringEntity(functionInput.toString()));
@@ -109,38 +115,19 @@ public class ContainerManagerAPI implements ContainerManager {
   @Override
   public String startContainer(String imageName) {
     try {
-      final int port = 8800 + functions.size();
-
-      final javax.json.JsonObject hostConfig = Json.createObjectBuilder().add("PortBindings",
-          Json.createObjectBuilder().add("8080/tcp", Json.createArrayBuilder().add(
-              Json.createObjectBuilder().add("HostPort", port).add("HostIp", "127.0.0.1").build()))
-              .build())
-          .build();
-
-      final javax.json.JsonObject exposedPorts =
-          Json.createObjectBuilder().add("8080/tcp", Json.createObjectBuilder().build()).build();
-
-      final Container container =
-          containers.create(Json.createObjectBuilder().add("Image", imageName)
-              // .add("ExposedPorts", Json.createParser(new StringReader("{\"8080/tcp\": {
-              // }}")).getObject())
-              // .add("HostConfig", Json.createParser(new StringReader("\"PortBindings\":
-              // {\"8080/tcp\": [{ \"HostPort\": \"8801\"}]}")).getObject())
-              // .add("ExposedPorts", Json.createObjectBuilder()
-              // .add("8080/tcp", JsonValue.EMPTY_JSON_OBJECT)
-              // .build())
-              // .add("HostConfig", Json.createObjectBuilder()
-              // .add("PortBindings", Json.createObjectBuilder()
-              // .add("8080/tcp", Json.createObjectBuilder()
-              // .add("HostPort", port)
-              // .build())
-              // .build())
-              // .build())
-              .add("ExposedPorts", exposedPorts).add("HostConfig", hostConfig).build());
-
+      final int port = 8800 + this.functions.size();
+      StringReader reader = new StringReader(
+          "{ \"PortBindings\": { \"8080/tcp\": [ { \"HostIp\": \"\", \"HostPort\": \"" + port
+              + "\" } ] } }");
+      JsonReader jsonReader = Json.createReader(reader);
+      javax.json.JsonObject hostConfig = jsonReader.readObject();
+      jsonReader.close();
+      javax.json.JsonObject exposedPorts =
+          Json.createObjectBuilder().add("8080/tcp", JsonValue.EMPTY_JSON_OBJECT).build();
+      Container container = containers.create(Json.createObjectBuilder().add("Image", imageName)
+          .add("ExposedPorts", exposedPorts).add("HostConfig", hostConfig).build());
       container.start();
-      functions.put(imageName, port);
-
+      this.functions.put(imageName, port);
       return container.containerId();
     } catch (Exception e) {
       e.printStackTrace();
