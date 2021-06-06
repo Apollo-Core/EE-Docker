@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "3bc4ed9d-4fea-48e2-91df-0cca7cb4f439",
+		"_postman_id": "b488540a-e8a0-454f-a4e0-aafaf096e764",
 		"name": "Container Manager Requests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -12,7 +12,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"image\": \"fedor89/addition\"\n}",
+					"raw": "{\n    \"image\": \"doetlingerlukas/addition\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -35,13 +35,13 @@
 			"response": []
 		},
 		{
-			"name": "http://localhost:5055/run/",
+			"name": "Container Manager Start",
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"firstSummand\": 35,\n    \"secondSummand\": 2\n}",
+					"raw": "{\n    \"image\": \"doetlingerlukas/addition\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -49,7 +49,36 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:5055/run/?image=fedor89/addition",
+					"raw": "http://localhost:5055/start/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5055",
+					"path": [
+						"start",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Container Manager Run",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstSummand\": 35,\n    \"secondSummand\": 5,\n    \"benchmark\": true\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5055/run/?image=doetlingerlukas/addition",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -62,7 +91,7 @@
 					"query": [
 						{
 							"key": "image",
-							"value": "fedor89/addition"
+							"value": "doetlingerlukas/addition"
 						}
 					]
 				},
