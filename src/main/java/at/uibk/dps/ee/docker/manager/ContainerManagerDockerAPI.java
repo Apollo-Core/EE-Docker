@@ -24,6 +24,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
@@ -94,7 +95,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
     try (CloseableHttpClient client = HttpClients.createDefault()) {
 
-      HttpGet request = new HttpGet("http://" + this.hostUri + ":" + port.get());
+      HttpPost request = new HttpPost("http://" + imageName.replaceAll("/", "-") + ":8080");
       request.setHeader("Accept", "application/json");
       request.setHeader("Content-type", "application/json");
       request.setEntity(new StringEntity(functionInput.toString()));
@@ -115,11 +116,13 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     final int port = 8800 + functions.size();
 
     HostConfig hostConfig = HostConfig.newHostConfig()
+      .withNetworkMode(ConstantsManager.dockerNetwork)
       .withPortBindings(PortBinding.parse(port + ":8080/tcp"));
 
     CreateContainerResponse container = this.client.createContainerCmd(imageName)
       .withExposedPorts(ExposedPort.tcp(8080))
       .withHostConfig(hostConfig)
+      .withName(imageName.replaceAll("/", "-"))
       .exec();
 
     String containerId = container.getId();

@@ -18,6 +18,8 @@ public final class ConstantsManager {
   public static final String defaultDockerUnixSocketLocation = "/var/run/docker.sock";
   public static final int defaultDockerHTTPPort = 2375;
 
+  public static final String dockerNetwork = "ee-docker-network";
+
   /**
    * No constructor.
    */

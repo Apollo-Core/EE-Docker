@@ -1,5 +1,7 @@
+import at.uibk.dps.ee.docker.manager.ConstantsManager;
 import at.uibk.dps.ee.docker.manager.ContainerManager;
 import at.uibk.dps.ee.docker.manager.ContainerManagerAPI;
+import at.uibk.dps.ee.docker.manager.ContainerManagerDockerAPI;
 import at.uibk.dps.ee.docker.server.ContainerServer;
 import ch.qos.logback.classic.util.ContextInitializer;
 import io.vertx.core.Vertx;
@@ -12,7 +14,7 @@ import io.vertx.core.Vertx;
 public class Play {
 
   public static void main(String[] args) throws Exception {
-    
+
     System.setProperty(ContextInitializer.CONFIG_FILE_PROPERTY, "./logging/config/logback.xml");
     Vertx vertx = Vertx.vertx();
 
@@ -21,12 +23,12 @@ public class Play {
 //      ConstantsManager.defaultDockerHTTPPort);
 
     // For Unix, using system sockets is recommended.
-    ContainerManager manager = new ContainerManagerAPI();//"/var/run/docker.sock");
+    //ContainerManager manager = new ContainerManagerAPI();//"/var/run/docker.sock");
     //ContainerManager manager = new ContainerManagerAPI(ConstantsManager.defaultDockerUnixSocketLocation,
     //  ConstantsManager.defaultDockerInternalUri);
 
-    //ContainerManager manager = new ContainerManagerDockerAPI(ConstantsManager.defaultDockerInternalUri,
-    //  ConstantsManager.defaultDockerHTTPPort);
+    ContainerManager manager = new ContainerManagerDockerAPI(ConstantsManager.defaultDockerInternalUri,
+      ConstantsManager.defaultDockerHTTPPort);
 
 //    ContainerManager manager = new ContainerManagerDockerAPI("localhost", 2375);
 //
