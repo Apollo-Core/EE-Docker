@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicInteger;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
@@ -15,17 +16,20 @@ import com.google.gson.JsonObject;
  */
 public class ContainerInputManager {
 
-
+  protected final AtomicInteger suffix = new AtomicInteger(0);
 
   /**
    * Creates a temporal input file with the contents of the provided json object.
    * 
    * @param jsonObject the provided json object
+   * @return the suffix for the created file
    */
-  public void createHostInputFile(JsonObject jsonObject) {
-    String path = "./" + ConstantsManager.inputFileName;
+  public int createHostInputFile(JsonObject jsonObject) {
+    int cur_suffix = suffix.getAndAdd(1);
+    String path = "./" + ConstantsManager.inputFileName + cur_suffix + ".json";
     try {
       Files.writeString(Path.of(path), jsonObject.toString());
+      return cur_suffix;
     } catch (IOException e) {
       throw new IllegalStateException("Could not write container input file");
     }
@@ -33,9 +37,11 @@ public class ContainerInputManager {
 
   /**
    * Deletes the temporal file on the host
+   * 
+   * @param suffix the suffix of the file to delete
    */
-  public void deleteHostInputFile() {
-    File file = new File("./" + ConstantsManager.inputFileName);
+  public void deleteHostInputFile(int suffix) {
+    File file = new File("./" + ConstantsManager.inputFileName + suffix + ".json");
     file.delete();
   }
 
@@ -45,7 +51,7 @@ public class ContainerInputManager {
 
     JsonArray array = new JsonArray();
     int num = 10000000;
-    
+
     for (int i = 0; i < num; i++) {
       array.add("string" + i);
     }
@@ -54,10 +60,10 @@ public class ContainerInputManager {
     input.add("input", array);
 
     ContainerManagerExec containerExec = new ContainerManagerExec();
-    
+
     JsonObject result = containerExec.runImage("fedor89/iterateinput", input);
     System.out.println(result.toString());
-   
+
   }
 
 }

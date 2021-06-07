@@ -8,8 +8,8 @@ package at.uibk.dps.ee.docker.manager;
 public final class ConstantsManager {
 
   // Container constants
-  public static final String containerSrcPath = "/usr/src/app";
-  public static final String inputFileName = "jsonInput.json";
+  public static final String containerSrcPath = "/var/www/java";
+  public static final String inputFileName = "jsonInput";
   
   // Docker commands
   public static final String dockerCommandInspect = "docker inspect ";

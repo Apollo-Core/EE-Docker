@@ -49,14 +49,14 @@ public class ContainerManagerExec implements ContainerManager {
   @Override
   public JsonObject runImage(String imageName, JsonObject functionInput) {
     // create the temporal file on the host
-    inputManager.createHostInputFile(functionInput);
+    int suffix = inputManager.createHostInputFile(functionInput);
 
     StringBuffer commandBuffer = new StringBuffer();
     String hostPath = Path.of("").toAbsolutePath().toString();
     commandBuffer.append(ConstantsManager.dockerCommandRun).append(hostPath).append('/')
-        .append(ConstantsManager.inputFileName).append(':')
+        .append(ConstantsManager.inputFileName + suffix + ".json").append(':')
         .append(ConstantsManager.containerSrcPath).append('/')
-        .append(ConstantsManager.inputFileName).append(' ');
+        .append(ConstantsManager.inputFileName + ".json").append(' ');
 
     String input = imageName;
     try {
@@ -66,7 +66,7 @@ public class ContainerManagerExec implements ContainerManager {
       logger.error("Image run failed. Image {}. Input {}.", imageName, input, failedCommand);
       throw new IllegalStateException(failedCommand);
     }finally {
-      inputManager.deleteHostInputFile();
+      inputManager.deleteHostInputFile(suffix);
     }
   }
 
