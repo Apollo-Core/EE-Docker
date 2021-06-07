@@ -1,5 +1,10 @@
 package at.uibk.dps.ee.docker.manager;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -22,14 +27,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.hc.core5.http.io.entity.StringEntity;
 
 /**
  * A {@link ContainerManager} based on the `docker-java` API.
@@ -93,22 +90,21 @@ public class ContainerManagerDockerAPI implements ContainerManager {
       return JsonParser.parseString("{ \"error\": \"Function not available!\" }").getAsJsonObject();
     }
 
-    try (CloseableHttpClient client = HttpClients.createDefault()) {
+    var client = HttpClient.newHttpClient();
 
-      HttpPost request = new HttpPost("http://" + imageName.replaceAll("/", "-") + ":8080");
-      request.setHeader("Accept", "application/json");
-      request.setHeader("Content-type", "application/json");
-      request.setEntity(new StringEntity(functionInput.toString()));
+    var request = HttpRequest.newBuilder(
+        URI.create("http://" + imageName.replaceAll("/", "-") + ":8080"))
+      .header("accept", "application/json")
+      .build();
 
-      CloseableHttpResponse response = client.execute(request);
-      final String responseString = EntityUtils.toString(response.getEntity());
-
-      return (JsonObject) JsonParser.parseString(responseString);
-    } catch (Exception e) {
+    try {
+      var response = client.send(request, BodyHandlers.ofString());
+      return (JsonObject) JsonParser.parseString(response.body());
+    } catch (IOException | InterruptedException e) {
       e.printStackTrace();
     }
 
-    return new JsonObject();
+    return JsonParser.parseString("{ \"error\": \"Running function failed\" }").getAsJsonObject();
   }
 
   @Override
