@@ -10,6 +10,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import at.uibk.dps.ee.core.ContainerManager;
 
 /**
  * A {@link ContainerManager} based on the exec command (directly calling the
@@ -38,6 +39,11 @@ public class ContainerManagerExec implements ContainerManager {
     if (!checkWhetherImageExists(imageName)) {
       pullFromDocker(imageName);
     }
+  }
+  
+  @Override
+  public void initImage(String imageName) {
+    pullImage(imageName);
   }
 
   @Override
