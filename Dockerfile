@@ -3,7 +3,7 @@ WORKDIR /project
 COPY . /project/
 RUN gradle assemble --no-daemon
 
-FROM adoptopenjdk:8-jre-hotspot
+FROM adoptopenjdk:11-jre-hotspot
 ENV APP_DIR /application
 ENV APP_FILE EE-Docker.jar
 

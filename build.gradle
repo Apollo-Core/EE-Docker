@@ -12,7 +12,8 @@ plugins {
   id 'jacoco'
 }
 
-sourceCompatibility = 1.8
+sourceCompatibility = 11
+targetCompatibility = 11
 
 // for compliance with higher Java versions
 jacoco {
