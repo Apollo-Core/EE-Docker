@@ -1,6 +1,9 @@
 package at.uibk.dps.ee.docker.manager;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -25,6 +28,7 @@ import com.github.dockerjava.transport.DockerHttpClient.Request;
 import com.github.dockerjava.transport.DockerHttpClient.Response;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -40,14 +44,11 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   private final DockerClientConfig config;
   private final DockerHttpClient clientHttp;
   private final DockerClient client;
-  private final String hostUri;
 
   private Map<String, Integer> functions = new HashMap<>();
 
   @Inject
   public ContainerManagerDockerAPI(String uri, int port) {
-    this.hostUri = uri;
-
     this.config = DefaultDockerClientConfig.createDefaultConfigBuilder()
       .withDockerHost("tcp://" + uri + ":" + port)
       .withDockerTlsVerify(false)
@@ -93,14 +94,19 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     var client = HttpClient.newHttpClient();
 
     var request = HttpRequest.newBuilder(
-        URI.create("http://" + imageName.replaceAll("/", "-") + ":8080"))
+        URI.create("http://" + imageName.replaceAll("/", "-") + ":" + ConstantsManager.defaultFunctionPort))
       .header("accept", "application/json")
+      .POST(HttpRequest.BodyPublishers.ofString(functionInput.toString()))
       .build();
 
     try {
       var response = client.send(request, BodyHandlers.ofString());
-      return (JsonObject) JsonParser.parseString(response.body());
-    } catch (IOException | InterruptedException e) {
+      var reader = new JsonReader(new StringReader(response.body()));
+      reader.setLenient(true);
+      System.out.println(response.body());
+      var json = (JsonObject) JsonParser.parseReader(reader);
+      return json;
+    } catch (Exception e) {
       e.printStackTrace();
     }
 
@@ -113,10 +119,10 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
     HostConfig hostConfig = HostConfig.newHostConfig()
       .withNetworkMode(ConstantsManager.dockerNetwork)
-      .withPortBindings(PortBinding.parse(port + ":8080/tcp"));
+      .withPortBindings(PortBinding.parse(port + ":" + ConstantsManager.defaultFunctionPort + "/tcp"));
 
     CreateContainerResponse container = this.client.createContainerCmd(imageName)
-      .withExposedPorts(ExposedPort.tcp(8080))
+      .withExposedPorts(ExposedPort.tcp(ConstantsManager.defaultFunctionPort))
       .withHostConfig(hostConfig)
       .withName(imageName.replaceAll("/", "-"))
       .exec();

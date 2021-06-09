@@ -19,6 +19,7 @@ public final class ConstantsManager {
   public static final int defaultDockerHTTPPort = 2375;
 
   public static final String dockerNetwork = "ee-docker-network";
+  public static final int defaultFunctionPort = 8080;
 
   /**
    * No constructor.
