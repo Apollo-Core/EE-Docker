@@ -4,7 +4,7 @@ import org.opt4j.core.config.annotations.Info;
 import org.opt4j.core.config.annotations.Order;
 import org.opt4j.core.start.Constant;
 import at.uibk.dps.ee.docker.manager.ContainerManager;
-import at.uibk.dps.ee.docker.manager.ContainerManagerAPI;
+import at.uibk.dps.ee.docker.manager.ContainerManagerDockerAPI;
 import at.uibk.dps.ee.docker.server.ServerStarter;
 import at.uibk.dps.ee.guice.modules.FunctionModule;
 
@@ -22,7 +22,7 @@ public class LocalContainersModule extends FunctionModule {
 
   @Override
   protected void config() {
-    bind(ContainerManager.class).to(ContainerManagerAPI.class);
+    bind(ContainerManager.class).to(ContainerManagerDockerAPI.class);
     bind(ServerStarter.class).asEagerSingleton();
   }
 

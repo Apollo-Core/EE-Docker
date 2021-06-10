@@ -16,19 +16,8 @@ public class Play {
     System.setProperty(ContextInitializer.CONFIG_FILE_PROPERTY, "./logging/config/logback.xml");
     Vertx vertx = Vertx.vertx();
 
-    // For Windows, TCP connection is needed.
-//    ContainerManager manager = new ContainerManagerAPI(ConstantsManager.localhost,
-//      ConstantsManager.defaultDockerHTTPPort);
-
-    // For Unix, using system sockets is recommended.
-    //ContainerManager manager = new ContainerManagerAPI();//"/var/run/docker.sock");
-    //ContainerManager manager = new ContainerManagerAPI(ConstantsManager.defaultDockerUnixSocketLocation,
-    //  ConstantsManager.defaultDockerInternalUri);
-
     ContainerManager manager = new ContainerManagerDockerAPI();
 
-//    ContainerManager manager = new ContainerManagerDockerAPI("localhost", 2375);
-//
     ContainerServer server = new ContainerServer(vertx, manager);
     server.start();
   }
