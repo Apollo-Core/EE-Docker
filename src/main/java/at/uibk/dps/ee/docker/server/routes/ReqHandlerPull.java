@@ -1,6 +1,6 @@
 package at.uibk.dps.ee.docker.server.routes;
 
-import at.uibk.dps.ee.core.ContainerManager;
+import at.uibk.dps.ee.docker.manager.ContainerManager;
 import at.uibk.dps.ee.docker.server.ConstantsServerContainer;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerResponse;
@@ -30,7 +30,7 @@ public class ReqHandlerPull implements Handler<RoutingContext> {
     HttpServerResponse response = ctx.response();
     JsonObject json = ctx.getBodyAsJson();
     String imageName = json.getString(ConstantsServerContainer.jsonKeyImageName);
-    manager.pullImage(imageName);
+    manager.initImage(imageName);
     response.setStatusCode(201).end();
   }
 }

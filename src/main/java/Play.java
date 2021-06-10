@@ -1,5 +1,5 @@
 import java.util.List;
-import at.uibk.dps.ee.core.ContainerManager;
+import at.uibk.dps.ee.docker.manager.ContainerManager;
 import at.uibk.dps.ee.docker.manager.ContainerManagerExec;
 import at.uibk.dps.ee.docker.server.ContainerServer;
 import ch.qos.logback.classic.util.ContextInitializer;

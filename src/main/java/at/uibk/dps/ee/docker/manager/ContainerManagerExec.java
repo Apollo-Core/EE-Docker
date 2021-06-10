@@ -10,7 +10,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import at.uibk.dps.ee.core.ContainerManager;
 
 /**
  * A {@link ContainerManager} based on the exec command (directly calling the
@@ -35,17 +34,17 @@ public class ContainerManagerExec implements ContainerManager {
   }
 
   @Override
-  public void pullImage(String imageName) {
+  public void initImage(String imageName) {
     if (!checkWhetherImageExists(imageName)) {
       pullFromDocker(imageName);
     }
   }
-  
-  @Override
-  public void initImage(String imageName) {
-    pullImage(imageName);
-  }
 
+  @Override
+  public void closeImage(String imageName) {
+    // Nothing to do here
+  }
+  
   @Override
   public JsonObject runImage(String imageName, JsonObject functionInput) {
     // create the temporal file on the host

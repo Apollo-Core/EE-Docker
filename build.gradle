@@ -32,9 +32,11 @@ dependencies {
   if (project.hasProperty("local")) {
     implementation project (':EE-Guice')
     implementation project (':EE-Core')
+    implementation project (':EE-Model')
   }else {
     implementation 'com.github.Apollo-Core:EE-Guice:main-SNAPSHOT'
     implementation 'com.github.Apollo-Core:EE-Core:master-SNAPSHOT'
+    implementation 'com.github.Apollo-Core:EE-Model:main-SNAPSHOT'
   }
   
   // SDARG Dependencies
