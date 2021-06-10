@@ -1,6 +1,4 @@
-import at.uibk.dps.ee.docker.manager.ConstantsManager;
 import at.uibk.dps.ee.docker.manager.ContainerManager;
-import at.uibk.dps.ee.docker.manager.ContainerManagerAPI;
 import at.uibk.dps.ee.docker.manager.ContainerManagerDockerAPI;
 import at.uibk.dps.ee.docker.server.ContainerServer;
 import ch.qos.logback.classic.util.ContextInitializer;
@@ -27,8 +25,7 @@ public class Play {
     //ContainerManager manager = new ContainerManagerAPI(ConstantsManager.defaultDockerUnixSocketLocation,
     //  ConstantsManager.defaultDockerInternalUri);
 
-    ContainerManager manager = new ContainerManagerDockerAPI(ConstantsManager.defaultDockerInternalUri,
-      ConstantsManager.defaultDockerHTTPPort);
+    ContainerManager manager = new ContainerManagerDockerAPI();
 
 //    ContainerManager manager = new ContainerManagerDockerAPI("localhost", 2375);
 //

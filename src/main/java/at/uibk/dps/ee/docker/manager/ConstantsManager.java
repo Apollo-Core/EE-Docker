@@ -25,4 +25,12 @@ public final class ConstantsManager {
    * No constructor.
    */
   private ConstantsManager() {}
+
+  public static String getDockerUri() {
+    if (System.getenv().containsKey("DOCKERIZED")) {
+      return defaultDockerInternalUri;
+    } else {
+      return localhost;
+    }
+  }
 }

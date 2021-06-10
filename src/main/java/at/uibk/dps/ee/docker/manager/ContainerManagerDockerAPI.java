@@ -1,8 +1,5 @@
 package at.uibk.dps.ee.docker.manager;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -23,9 +20,6 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
-import com.github.dockerjava.transport.DockerHttpClient;
-import com.github.dockerjava.transport.DockerHttpClient.Request;
-import com.github.dockerjava.transport.DockerHttpClient.Response;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
@@ -41,35 +35,43 @@ import com.google.inject.Singleton;
 @Singleton
 public class ContainerManagerDockerAPI implements ContainerManager {
 
-  private final DockerClientConfig config;
-  private final DockerHttpClient clientHttp;
   private final DockerClient client;
 
   private Map<String, Integer> functions = new HashMap<>();
 
   @Inject
-  public ContainerManagerDockerAPI(String uri, int port) {
-    this.config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-      .withDockerHost("tcp://" + uri + ":" + port)
-      .withDockerTlsVerify(false)
-      .build();
+  public ContainerManagerDockerAPI() {
+    this.client = getDockerClient();
+  }
 
-    this.clientHttp = new ApacheDockerHttpClient.Builder()
+   /**
+  * Creates the docker client object using the host address matching the current
+  * operating system.
+  *
+  * @return the docker client object using the host address matching the current
+  *         operating system
+  */
+  protected final DockerClient getDockerClient() {
+    DockerClientConfig config;
+
+    if (System.getProperty("os.name").equals("Windows") || System.getenv().get("HOST_CONNECTION_TYPE").equals("tcp")) {
+      config = DefaultDockerClientConfig.createDefaultConfigBuilder()
+        .withDockerHost("tcp://" + ConstantsManager.getDockerUri() + ":" + ConstantsManager.defaultDockerHTTPPort)
+        .withDockerTlsVerify(false)
+        .build();
+    } else {
+      System.out.println("We are on Linux.");
+      config = DefaultDockerClientConfig.createDefaultConfigBuilder()
+        .build();
+    }
+
+    var clientHttp = new ApacheDockerHttpClient.Builder()
       .dockerHost(config.getDockerHost())
       .sslConfig(config.getSSLConfig())
       .maxConnections(100)
       .build();
 
-    Request request = Request.builder()
-      .method(Request.Method.GET)
-      .path("/_ping")
-      .build();
-
-    try (Response response = clientHttp.execute(request)) {
-      assert(response.getStatusCode() == 200);
-    }
-
-    this.client = DockerClientImpl.getInstance(config, clientHttp);
+    return DockerClientImpl.getInstance(config, clientHttp);
   }
 
   @Override

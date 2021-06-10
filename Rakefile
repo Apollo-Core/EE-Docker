@@ -1,8 +1,14 @@
 # frozen_string_literal: true
 
+require 'os'
+
 task :build do
   desc 'build Docker image'
-  sh 'docker', 'build', '.', '-t', 'ee-docker'
+  if OS.windows?
+    sh 'docker', 'build', '--build-arg', 'HOST_CONNECTION_TYPE=tcp', '.', '-t', 'ee-docker'
+  else
+    sh 'docker', 'build', '.', '-t', 'ee-docker'
+  end
 end
 
 task :scan_container, [:name] do |name: 'ee-docker'|
