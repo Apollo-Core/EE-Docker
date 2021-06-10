@@ -12,7 +12,8 @@ plugins {
   id 'jacoco'
 }
 
-sourceCompatibility = 1.8
+sourceCompatibility = 11
+targetCompatibility = 11
 
 // for compliance with higher Java versions
 jacoco {
@@ -53,11 +54,6 @@ dependencies {
   implementation 'io.vertx:vertx-web:4.0.3'
   // SLF4J and Logback for logging
   implementation group: "ch.qos.logback", name: "logback-classic", version: "1.2.3"
-
-  // Lightweight Docker API
-  // https://github.com/amihaiemil/docker-java-api
-  implementation 'org.glassfish:javax.json:1.1'
-  implementation 'com.amihaiemil.web:docker-java-api:0.0.13'
 
   // Official Docker API
   implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.2.8'
