@@ -62,6 +62,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     } else {
       System.out.println("We are on Linux.");
       config = DefaultDockerClientConfig.createDefaultConfigBuilder()
+        .withDockerHost("unix://" + ConstantsManager.defaultDockerUnixSocketLocation)
         .build();
     }
 

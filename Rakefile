@@ -13,7 +13,11 @@ end
 
 task :scan_container, [:name] do |name: 'ee-docker'|
   desc 'check a running Docker container'
-  sh 'docker', 'run', '--network', 'ee-docker-network', '-it', 'instrumentisto/nmap', name
+  if OS.windows?
+    sh 'docker', 'run', '--network', 'ee-docker-network', '-it', 'instrumentisto/nmap', name
+  else
+    sh 'docker', 'run', '--network', 'ee-docker-network', '-v', '/var/run/docker.sock:/var/run/docker.sock', '-it', 'instrumentisto/nmap', name
+  end
 end
 
 task :network do
