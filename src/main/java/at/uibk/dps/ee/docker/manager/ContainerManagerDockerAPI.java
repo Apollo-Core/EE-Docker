@@ -54,7 +54,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   protected final DockerClient getDockerClient() {
     DockerClientConfig config;
 
-    if (System.getProperty("os.name").equals("Windows") || System.getenv().get("HOST_CONNECTION_TYPE").equals("tcp")) {
+    if (System.getProperty("os.name").equals("Windows") || System.getenv().getOrDefault("HOST_CONNECTION_TYPE", "tcp").equals("tcp")) {
       config = DefaultDockerClientConfig.createDefaultConfigBuilder()
         .withDockerHost("tcp://" + ConstantsManager.getDockerUri() + ":" + ConstantsManager.defaultDockerHTTPPort)
         .withDockerTlsVerify(false)
@@ -96,7 +96,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     var client = HttpClient.newHttpClient();
 
     var request = HttpRequest.newBuilder(
-        URI.create("http://" + imageName.replaceAll("/", "-") + ":" + ConstantsManager.defaultFunctionPort))
+        getContainerAddress(imageName, port.get()))
       .header("accept", "application/json")
       .POST(HttpRequest.BodyPublishers.ofString(functionInput.toString()))
       .build();
@@ -113,6 +113,21 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     }
 
     return JsonParser.parseString("{ \"error\": \"Running function failed\" }").getAsJsonObject();
+  }
+
+  /**
+   * Finds the correct address of a function container depending on the application type.
+   * For dockerized applications, the function name can be used directly, while running
+   * on the local OS uses a specific port mapping.
+   *
+   * @return The correct URI for a function container.
+   */
+  protected final URI getContainerAddress(String imageName, Integer port) {
+    if (System.getenv().containsKey("DOCKERIZED_APPLICATION")) {
+      return URI.create("http://" + imageName.replaceAll("/", "-") + ":" + ConstantsManager.defaultFunctionPort);
+    } else {
+      return URI.create("http://" + ConstantsManager.localhost + ":" + port);
+    }
   }
 
   @Override
