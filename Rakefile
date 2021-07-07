@@ -13,11 +13,7 @@ end
 
 task :scan_container, [:name] do |name: 'ee-docker'|
   desc 'check a running Docker container'
-  if OS.windows?
-    sh 'docker', 'run', '--network', 'ee-docker-network', '-it', 'instrumentisto/nmap', name
-  else
-    sh 'docker', 'run', '--network', 'ee-docker-network', '-v', '/var/run/docker.sock:/var/run/docker.sock', '-it', 'instrumentisto/nmap', name
-  end
+  sh 'docker', 'run', '--network', 'ee-docker-network', '-it', 'instrumentisto/nmap', name
 end
 
 task :network do
@@ -29,7 +25,11 @@ end
 
 task :run => [:build, :network] do
   desc 'run Docker image'
-  sh 'docker', 'run', '--name', 'ee-docker', '--network', 'ee-docker-network', '-p', '5055:5055', 'ee-docker'
+  if OS.windows?
+    sh 'docker', 'run', '--name', 'ee-docker', '--network', 'ee-docker-network', '-p', '5055:5055', 'ee-docker'
+  else
+    sh 'docker', 'run', '--name', 'ee-docker', '-v', '/var/run/docker.sock:/var/run/docker.sock', '--network', 'ee-docker-network', '-p', '5055:5055', 'ee-docker'
+  end
 end
 
 task :cleanup do
