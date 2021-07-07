@@ -20,11 +20,16 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
+import com.github.dockerjava.transport.DockerHttpClient.Request;
+import com.github.dockerjava.transport.DockerHttpClient.Response;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 /**
  * A {@link ContainerManager} based on the `docker-java` API.
@@ -71,6 +76,15 @@ public class ContainerManagerDockerAPI implements ContainerManager {
       .sslConfig(config.getSSLConfig())
       .maxConnections(100)
       .build();
+
+    Request request = Request.builder()
+      .method(Request.Method.GET)
+      .path("/_ping")
+      .build();
+
+    try (Response response = clientHttp.execute(request)) {
+      assertThat(response.getStatusCode(), is(200));
+    }
 
     return DockerClientImpl.getInstance(config, clientHttp);
   }
