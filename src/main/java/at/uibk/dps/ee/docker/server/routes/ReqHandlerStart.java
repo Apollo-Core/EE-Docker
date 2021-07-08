@@ -30,7 +30,7 @@ public class ReqHandlerStart implements Handler<RoutingContext> {
     HttpServerResponse response = ctx.response();
     JsonObject json = ctx.getBodyAsJson();
     String imageName = json.getString(ConstantsServerContainer.jsonKeyImageName);
-    String containerId = manager.startContainer(imageName);
-    response.setStatusCode(200).end(containerId);
+    manager.initImage(imageName);
+    response.setStatusCode(200).end();
   }
 }

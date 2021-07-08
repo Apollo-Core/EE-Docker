@@ -30,7 +30,7 @@ public class ReqHandlerRemove implements Handler<RoutingContext> {
     HttpServerResponse response = ctx.response();
     JsonObject json = ctx.getBodyAsJson();
     String containerId = json.getString(ConstantsServerContainer.jsonKeyContainer);
-    manager.removeContainer(containerId);
+    manager.closeImage(containerId);
     response.setStatusCode(200);
   }
 }

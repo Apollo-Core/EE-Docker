@@ -43,6 +43,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   private final DockerClient client;
 
   private Map<String, Integer> functions = new HashMap<>();
+  private Map<String, String> containers = new HashMap<>();
 
   @Inject
   public ContainerManagerDockerAPI() {
@@ -89,7 +90,6 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     return DockerClientImpl.getInstance(config, clientHttp);
   }
 
-  @Override
   public void pullImage(String imageName) {
     ResultCallback.Adapter<PullResponseItem> res = this.client.pullImageCmd(imageName).start();
 
@@ -101,7 +101,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   }
 
   @Override
-  public JsonObject runFunction(String imageName, JsonObject functionInput) {
+  public JsonObject runImage(String imageName, JsonObject functionInput) {
     Optional<Integer> port = Optional.ofNullable(this.functions.get(imageName));
 
     if (port.isEmpty()) {
@@ -146,7 +146,9 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   }
 
   @Override
-  public String startContainer(String imageName) {
+  public void initImage(String imageName) {
+    this.pullImage(imageName);
+
     final int port = 8800 + functions.size();
 
     HostConfig hostConfig = HostConfig.newHostConfig()
@@ -169,12 +171,12 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     }
 
     this.functions.put(imageName, port);
-    return containerId;
+    this.containers.put(imageName, containerId);
   }
 
   @Override
-  public void removeContainer(String containerId) {
-    this.client.removeContainerCmd(containerId)
+  public void closeImage(String imageName) {
+    this.client.removeContainerCmd(this.containers.get(imageName))
       .withForce(true)
       .exec();
   }

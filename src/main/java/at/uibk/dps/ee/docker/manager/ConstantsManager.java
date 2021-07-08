@@ -10,13 +10,11 @@ public final class ConstantsManager {
   // Container constants
   public static final String containerSrcPath = "/var/www/java";
   public static final String inputFileName = "jsonInput";
-  
+
   // Docker commands
   public static final String dockerCommandInspect = "docker inspect ";
   public static final String dockerCommandPull = "docker pull ";
   public static final String dockerCommandRun = "docker run --rm -v ";
-  
-  public static final String dockerCommandRun = "docker run ";
 
   // Docker Engine Connections
   public static final String localhost = "localhost";
