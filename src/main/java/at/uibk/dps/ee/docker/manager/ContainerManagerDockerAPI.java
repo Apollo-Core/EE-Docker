@@ -90,16 +90,6 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     return DockerClientImpl.getInstance(config, clientHttp);
   }
 
-  public void pullImage(String imageName) {
-    ResultCallback.Adapter<PullResponseItem> res = this.client.pullImageCmd(imageName).start();
-
-    try {
-      res.awaitCompletion();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-  }
-
   @Override
   public JsonObject runImage(String imageName, JsonObject functionInput) {
     Optional<Integer> port = Optional.ofNullable(this.functions.get(imageName));
@@ -142,6 +132,16 @@ public class ContainerManagerDockerAPI implements ContainerManager {
       return URI.create("http://" + imageName.replaceAll("/", "-") + ":" + ConstantsManager.defaultFunctionPort);
     } else {
       return URI.create("http://" + ConstantsManager.localhost + ":" + port);
+    }
+  }
+
+  private void pullImage(String imageName) {
+    ResultCallback.Adapter<PullResponseItem> res = this.client.pullImageCmd(imageName).start();
+
+    try {
+      res.awaitCompletion();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     }
   }
 

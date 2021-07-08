@@ -3,7 +3,6 @@ package at.uibk.dps.ee.docker.server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import at.uibk.dps.ee.docker.manager.ContainerManager;
-import at.uibk.dps.ee.docker.server.routes.ReqHandlerPull;
 import at.uibk.dps.ee.docker.server.routes.ReqHandlerRemove;
 import at.uibk.dps.ee.docker.server.routes.ReqHandlerRun;
 import at.uibk.dps.ee.docker.server.routes.ReqHandlerStart;
@@ -44,11 +43,6 @@ public class ContainerServer {
    * Configures the handlers for the routes served by the server.
    */
   protected final void configureRoutes() {
-    final Route pullRoute =
-        router.route(ConstantsServerContainer.routePullImage).method(HttpMethod.POST).handler(BodyHandler.create());
-    ReqHandlerPull handlerPull = new ReqHandlerPull(manager);
-    pullRoute.blockingHandler(handlerPull::handle);
-
     final Route runRoute =
         router.route(ConstantsServerContainer.routeRunFunction).method(HttpMethod.POST).handler(BodyHandler.create());
     ReqHandlerRun handlerRun = new ReqHandlerRun(manager);
