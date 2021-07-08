@@ -1,0 +1,14 @@
+config:
+  target: "http://localhost:5055"
+  phases:
+    - duration: 30
+      arrivalRate: 1
+
+scenarios:
+  - name: "run function"
+    flow:
+      - post:
+          url: "/run/?image=fedor89/addition"
+          json:
+            firstSummand: 15
+            secondSummand: 25
