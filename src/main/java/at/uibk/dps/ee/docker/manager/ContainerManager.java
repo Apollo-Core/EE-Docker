@@ -8,7 +8,6 @@ import com.google.inject.ImplementedBy;
  *
  * @author Fedor Smirnov
  */
-@ImplementedBy(ContainerManagerNone.class)
 public interface ContainerManager {
 
   /**
