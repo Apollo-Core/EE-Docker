@@ -1,7 +1,7 @@
 package at.uibk.dps.ee.docker.manager;
 
 import com.google.gson.JsonObject;
-import com.google.inject.ImplementedBy;
+import io.vertx.core.Future;
 
 /**
  * Interface used to manage the state of the docker containers.
@@ -24,7 +24,7 @@ public interface ContainerManager {
    * @param functionInput the function input
    * @return the function output as a Json Object
    */
-  JsonObject runImage(String imageName, JsonObject functionInput);
+  Future<JsonObject> runImage(String imageName, JsonObject functionInput);
 
   /**
    * Performs the image operations necessary before shutting down.
