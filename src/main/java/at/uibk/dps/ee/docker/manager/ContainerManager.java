@@ -1,6 +1,7 @@
 package at.uibk.dps.ee.docker.manager;
 
 import com.google.gson.JsonObject;
+import com.google.inject.ImplementedBy;
 import io.vertx.core.Future;
 
 /**
@@ -8,6 +9,7 @@ import io.vertx.core.Future;
  *
  * @author Fedor Smirnov
  */
+@ImplementedBy(ContainerManagerNone.class)
 public interface ContainerManager {
 
   /**
