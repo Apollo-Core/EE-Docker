@@ -26,8 +26,6 @@ import at.uibk.dps.ee.guice.starter.VertxProvider;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.client.WebClient;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 
 /**
  * A {@link ContainerManager} based on the `docker-java` API.
@@ -80,7 +78,9 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     Request request = Request.builder().method(Request.Method.GET).path("/_ping").build();
 
     try (Response response = clientHttp.execute(request)) {
-      assertThat(response.getStatusCode(), is(200));
+      if (response.getStatusCode() != 200) {
+        throw new IllegalStateException("Ping to Docker API failed.");
+      }
     }
 
     return DockerClientImpl.getInstance(config, clientHttp);
