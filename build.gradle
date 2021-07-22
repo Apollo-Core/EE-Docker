@@ -32,9 +32,9 @@ dependencies {
     implementation project (':EE-Core')
     implementation project (':EE-Model')
   }else {
-    implementation 'com.github.Apollo-Core:EE-Guice:vertex-SNAPSHOT'
-    implementation 'com.github.Apollo-Core:EE-Core:vertx-SNAPSHOT'
-    implementation 'com.github.Apollo-Core:EE-Model:vertex-SNAPSHOT'
+    implementation 'com.github.Apollo-Core:EE-Guice:main-SNAPSHOT'
+    implementation 'com.github.Apollo-Core:EE-Core:master-SNAPSHOT'
+    implementation 'com.github.Apollo-Core:EE-Model:main-SNAPSHOT'
   }
 
   // SDARG Dependencies
