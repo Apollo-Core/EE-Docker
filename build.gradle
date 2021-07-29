@@ -35,9 +35,9 @@ dependencies {
     implementation project (':EE-Core')
     implementation project (':EE-Model')
   }else {
-    implementation 'com.github.Apollo-Core:EE-Guice:main-SNAPSHOT'
-    implementation 'com.github.Apollo-Core:EE-Core:master-SNAPSHOT'
-    implementation 'com.github.Apollo-Core:EE-Model:main-SNAPSHOT'
+    implementation 'com.github.Apollo-Core:EE-Guice:preVertX'
+    implementation 'com.github.Apollo-Core:EE-Core:preVertX'
+    implementation 'com.github.Apollo-Core:EE-Model:prevertx'
   }
 
   // SDARG Dependencies
