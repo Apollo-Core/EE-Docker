@@ -45,12 +45,26 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   private Map<String, Integer> functions = new HashMap<>();
   private Map<String, String> containers = new HashMap<>();
 
+  /**
+   * Constructs an instance of ContainerManagerDockerAPI.
+   * Creates a connection to a local Docker client and creates a network, iff
+   * it doen't already exist, to be used by the function containers.
+   */
   @Inject
   public ContainerManagerDockerAPI() {
     this.client = getDockerClient();
-  }
 
-   /**
+    try {
+      this.client.createNetworkCmd()
+        .withName(ConstantsManager.dockerNetwork)
+        .withCheckDuplicate(true)
+        .exec();
+    } catch (Exception e) {
+      // Network already exists, TODO: log this event
+    }
+}
+
+  /**
   * Creates the docker client object using the host address matching the current
   * operating system.
   *
