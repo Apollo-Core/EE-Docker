@@ -1,7 +1,6 @@
 package at.uibk.dps.ee.docker.manager;
 
 import com.google.gson.JsonObject;
-import com.google.inject.ImplementedBy;
 
 /**
  * Interface used to manage the state of the docker containers.
