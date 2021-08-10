@@ -10,7 +10,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.vertx.core.Future;
 
 /**
  * A {@link ContainerManager} based on the exec command (directly calling the
@@ -45,9 +44,9 @@ public class ContainerManagerExec implements ContainerManager {
   public void closeImage(String imageName) {
     // Nothing to do here
   }
-  
+
   @Override
-  public Future<JsonObject> runImage(String imageName, JsonObject functionInput) {
+  public JsonObject runImage(String imageName, JsonObject functionInput) {
     // create the temporal file on the host
     int suffix = inputManager.createHostInputFile(functionInput);
 
@@ -62,11 +61,11 @@ public class ContainerManagerExec implements ContainerManager {
     try {
       String runResult = executeCommand(commandBuffer.toString(), input);
       JsonObject jsonResult = JsonParser.parseString(runResult).getAsJsonObject();
-      return Future.succeededFuture(jsonResult);
+      return jsonResult;
     } catch (CommandException failedCommand) {
       logger.error("Image run failed. Image {}. Input {}.", imageName, input, failedCommand);
       throw new IllegalStateException(failedCommand);
-    }finally {
+    } finally {
       inputManager.deleteHostInputFile(suffix);
     }
   }

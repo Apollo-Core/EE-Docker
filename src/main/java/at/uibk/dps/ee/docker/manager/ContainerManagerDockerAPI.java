@@ -4,7 +4,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-
+import java.util.concurrent.CountDownLatch;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
@@ -23,7 +23,6 @@ import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import at.uibk.dps.ee.docker.VertXProvider;
-import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.client.WebClient;
 
@@ -87,11 +86,9 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   }
 
   @Override
-  public Future<JsonObject> runImage(String imageName, JsonObject functionInput) {
+  public JsonObject runImage(String imageName, JsonObject functionInput) {
+    CountDownLatch latch = new CountDownLatch(1);
     Optional<Integer> port = Optional.ofNullable(this.functions.get(imageName));
-    if (port.isEmpty()) {
-      return Future.failedFuture("Function not available.");
-    }
     Promise<JsonObject> resultPromise = Promise.promise();
     httpClient.postAbs(getContainerAddress(imageName, port.get()).toASCIIString())
         .sendJson(new io.vertx.core.json.JsonObject(functionInput.toString()))
@@ -99,10 +96,17 @@ public class ContainerManagerDockerAPI implements ContainerManager {
           JsonObject jsonResult =
               JsonParser.parseString(asyncRes.body().toString()).getAsJsonObject();
           resultPromise.complete(jsonResult);
+          latch.countDown();
         }).onFailure(failureThrowable -> {
           System.err.println(failureThrowable.getMessage());
         });
-    return resultPromise.future();
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return resultPromise.future().result();
   }
 
   /**

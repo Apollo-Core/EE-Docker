@@ -3,7 +3,6 @@ package at.uibk.dps.ee.docker.server.routes;
 import com.google.gson.JsonParser;
 import at.uibk.dps.ee.docker.manager.ContainerManager;
 import at.uibk.dps.ee.docker.server.ConstantsServerContainer;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
@@ -32,12 +31,8 @@ public class ReqHandlerRun implements Handler<RoutingContext> {
     HttpServerResponse response = ctx.response();
     JsonObject vertJson = ctx.getBodyAsJson();
     String imageToRun = ctx.queryParam(ConstantsServerContainer.jsonKeyImageName).get(0);
-    
-    Future<com.google.gson.JsonObject> futureResult = manager.runImage(imageToRun,
+    com.google.gson.JsonObject futureResult = manager.runImage(imageToRun,
         (com.google.gson.JsonObject) JsonParser.parseString(vertJson.toString()));
-    
-    futureResult.onComplete(asyncRes ->{
-      response.setStatusCode(200).end(asyncRes.result().toString());
-    });
+    response.setStatusCode(200).end(futureResult.toString());
   }
 }
