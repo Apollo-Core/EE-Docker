@@ -22,7 +22,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import at.uibk.dps.ee.guice.starter.VertxProvider;
+import at.uibk.dps.ee.docker.VertXProvider;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.client.WebClient;
@@ -44,9 +44,9 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   private Map<String, String> containers = new HashMap<>();
 
   @Inject
-  public ContainerManagerDockerAPI(VertxProvider vProv) {
+  public ContainerManagerDockerAPI(VertXProvider vProv) {
     this.client = getDockerClient();
-    this.httpClient = WebClient.create(vProv.getVertx());
+    this.httpClient = WebClient.create(vProv.getVertX());
   }
 
   /**
