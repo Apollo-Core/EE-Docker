@@ -2,7 +2,7 @@ package at.uibk.dps.ee.docker.server;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import at.uibk.dps.ee.docker.manager.ContainerManager;
+import at.uibk.dps.ee.core.ContainerManager;
 import at.uibk.dps.ee.docker.server.routes.ReqHandlerRemove;
 import at.uibk.dps.ee.docker.server.routes.ReqHandlerRun;
 import at.uibk.dps.ee.docker.server.routes.ReqHandlerStart;

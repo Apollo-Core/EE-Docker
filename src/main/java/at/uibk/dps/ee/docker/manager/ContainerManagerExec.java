@@ -10,6 +10,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import at.uibk.dps.ee.core.ContainerManager;
 import io.vertx.core.Future;
 
 /**

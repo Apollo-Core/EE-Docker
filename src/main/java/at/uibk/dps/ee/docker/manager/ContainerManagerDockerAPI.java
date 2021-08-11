@@ -20,8 +20,7 @@ import com.github.dockerjava.transport.DockerHttpClient.Request;
 import com.github.dockerjava.transport.DockerHttpClient.Response;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import at.uibk.dps.ee.core.ContainerManager;
 import at.uibk.dps.ee.guice.starter.VertxProvider;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -33,7 +32,6 @@ import io.vertx.ext.web.client.WebClient;
  *
  * @author Lukas Dötlinger
  */
-@Singleton
 public class ContainerManagerDockerAPI implements ContainerManager {
 
   private final DockerClient client;
@@ -48,7 +46,6 @@ public class ContainerManagerDockerAPI implements ContainerManager {
    * a local Docker client and creates a network, iff it doen't already exist, to
    * be used by the function containers.
    */
-  @Inject
   public ContainerManagerDockerAPI(VertxProvider vProv) {
     this.client = getDockerClient();
     try {

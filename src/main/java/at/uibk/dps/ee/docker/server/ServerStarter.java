@@ -3,7 +3,7 @@ package at.uibk.dps.ee.docker.server;
 import org.opt4j.core.start.Constant;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import at.uibk.dps.ee.docker.manager.ContainerManager;
+import at.uibk.dps.ee.guice.container.ContainerManagerProvider;
 import io.vertx.core.Vertx;
 
 /**
@@ -27,9 +27,9 @@ public class ServerStarter {
   @Inject
   public ServerStarter(
       @Constant(value = "portNumber", namespace = ServerStarter.class) int portNumber,
-      ContainerManager manager) {
+      ContainerManagerProvider managerProv) {
     Vertx vertx = Vertx.vertx();
-    ContainerServer server = new ContainerServer(vertx, manager);
+    ContainerServer server = new ContainerServer(vertx, managerProv.getContainerManager());
     server.start();
   }
 }
