@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import at.uibk.dps.ee.core.ContainerManager;
 import at.uibk.dps.ee.core.LocalResources;
+import at.uibk.dps.ee.guice.container.ContainerManagerProvider;
 import at.uibk.dps.ee.model.graph.SpecificationProvider;
 import at.uibk.dps.ee.model.properties.PropertyServiceMapping;
 import at.uibk.dps.ee.model.properties.PropertyServiceMapping.EnactmentMode;
@@ -36,9 +37,9 @@ public class LocalResourcesDocker implements LocalResources {
    */
   @Inject
   public LocalResourcesDocker(final SpecificationProvider specProvider,
-      final ContainerManager containerManager) {
+      final ContainerManagerProvider containerManagerProv) {
     this.mappings = specProvider.getMappings();
-    this.containerManager = containerManager;
+    this.containerManager = containerManagerProv.getContainerManager();
   }
 
   @Override
