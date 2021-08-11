@@ -1,6 +1,7 @@
 package at.uibk.dps.ee.docker.manager;
 
 import com.google.gson.JsonObject;
+import io.vertx.core.Future;
 
 /**
  * To prevent build errors when no manager needed.
@@ -16,8 +17,8 @@ public class ContainerManagerNone implements ContainerManager {
   }
 
   @Override
-  public JsonObject runImage(String imageName, JsonObject functionInput) {
-    throw new IllegalStateException("Should never be called");
+  public Future<JsonObject> runImage(String imageName, JsonObject functionInput) {
+    return Future.failedFuture("Should never be called.");
   }
 
   @Override

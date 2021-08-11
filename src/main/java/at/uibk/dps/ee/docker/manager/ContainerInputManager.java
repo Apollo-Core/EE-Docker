@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
@@ -49,20 +48,20 @@ public class ContainerInputManager {
 
   public static void main(String[] args) throws IOException {
 
-    JsonArray array = new JsonArray();
-    int num = 10000000;
-
-    for (int i = 0; i < num; i++) {
-      array.add("string" + i);
-    }
-
-    JsonObject input = new JsonObject();
-    input.add("input", array);
-
-    ContainerManagerExec containerExec = new ContainerManagerExec();
-
-    JsonObject result = containerExec.runImage("fedor89/iterateinput", input);
-    System.out.println(result.toString());
+//    JsonArray array = new JsonArray();
+//    int num = 10000000;
+//
+//    for (int i = 0; i < num; i++) {
+//      array.add("string" + i);
+//    }
+//
+//    JsonObject input = new JsonObject();
+//    input.add("input", array);
+//
+//    ContainerManagerExec containerExec = new ContainerManagerExec();
+//
+//    JsonObject result = containerExec.runImage("fedor89/iterateinput", input);
+//    System.out.println(result.toString());
 
   }
 
