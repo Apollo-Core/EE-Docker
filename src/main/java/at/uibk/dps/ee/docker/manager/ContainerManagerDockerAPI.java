@@ -25,6 +25,8 @@ import at.uibk.dps.ee.guice.starter.VertxProvider;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.client.WebClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link ContainerManager} based on the `docker-java` API.
@@ -34,6 +36,7 @@ import io.vertx.ext.web.client.WebClient;
  */
 public class ContainerManagerDockerAPI implements ContainerManager {
 
+  protected final Logger logger = LoggerFactory.getLogger(ContainerManagerDockerAPI.class);
   private final DockerClient client;
 
   protected final WebClient httpClient;
@@ -52,7 +55,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
       this.client.createNetworkCmd().withName(ConstantsManager.dockerNetwork)
           .withCheckDuplicate(true).exec();
     } catch (Exception e) {
-      // Network already exists, TODO: log this event
+      logger.info("Docker network for function containers already exits! Make sure this is set up correctly!");
     }
     this.httpClient = WebClient.create(vProv.getVertx());
   }
@@ -67,21 +70,22 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   protected final DockerClient getDockerClient() {
     DockerClientConfig config;
 
-    // if (System.getProperty("os.name").equals("Windows") ||
-    // System.getenv().getOrDefault("HOST_CONNECTION_TYPE", "tcp").equals("tcp")) {
-    // config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-    // .withDockerHost("tcp://" + ConstantsManager.getDockerUri() + ":" +
-    // ConstantsManager.defaultDockerHTTPPort)
-    // .withDockerTlsVerify(false)
-    // .build();
-    // } else {
-    System.out.println("We are on Linux.");
-    config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-        .withDockerHost("unix://" + ConstantsManager.defaultDockerUnixSocketLocation).build();
-    // }
+    if (System.getProperty("os.name").equals("Windows") ||
+      System.getenv().getOrDefault("HOST_CONNECTION_TYPE", "tcp").equals("tcp")) {
+
+      logger.info("Using TCP connection to Docker Host.");
+      config = DefaultDockerClientConfig.createDefaultConfigBuilder()
+        .withDockerHost("tcp://" + ConstantsManager.getDockerUri() + ":" + ConstantsManager.defaultDockerHTTPPort)
+        .withDockerTlsVerify(false)
+        .build();
+    } else {
+      logger.info("Using UNIX Socket for connecting to Docker Host.");
+      config = DefaultDockerClientConfig.createDefaultConfigBuilder()
+          .withDockerHost("unix://" + ConstantsManager.defaultDockerUnixSocketLocation).build();
+     }
 
     var clientHttp = new ApacheDockerHttpClient.Builder().dockerHost(config.getDockerHost())
-        .sslConfig(config.getSSLConfig()).maxConnections(100).build();
+      .sslConfig(config.getSSLConfig()).maxConnections(100).build();
 
     Request request = Request.builder().method(Request.Method.GET).path("/_ping").build();
 

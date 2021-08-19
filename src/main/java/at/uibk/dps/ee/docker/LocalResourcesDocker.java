@@ -55,6 +55,6 @@ public class LocalResourcesDocker implements LocalResources {
 
   @Override
   public void close() {
-    images.forEach(image -> containerManager.closeImage(image));
+    images.forEach(containerManager::closeImage);
   }
 }
