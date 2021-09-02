@@ -3,6 +3,7 @@ package at.uibk.dps.ee.docker.manager;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import at.uibk.dps.ee.core.ContainerManager;
+import at.uibk.dps.ee.docker.manager.ContainerManagerDockerAPI.UsedOperatingSystem;
 import at.uibk.dps.ee.guice.container.ContainerManagerProvider;
 import at.uibk.dps.ee.guice.starter.VertxProvider;
 
@@ -33,13 +34,13 @@ public class ContainerManagerProviderDocker implements ContainerManagerProvider 
    */
   @Inject
   public ContainerManagerProviderDocker(final DockerManager managerType,
-      final VertxProvider vProv) {
+      final UsedOperatingSystem usedOs, final VertxProvider vProv) {
     switch (managerType) {
       case Exec:
         this.manager = new ContainerManagerExec();
         break;
       case DockerApi:
-        this.manager = new ContainerManagerDockerAPI(vProv);
+        this.manager = new ContainerManagerDockerAPI(vProv, usedOs);
         break;
       default:
         throw new IllegalArgumentException("Unknown type of docker manager: " + managerType.name());

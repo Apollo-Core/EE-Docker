@@ -25,6 +25,7 @@ import at.uibk.dps.ee.guice.starter.VertxProvider;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.client.WebClient;
+import org.opt4j.core.start.Constant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,18 +45,32 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   private Map<String, Integer> functions = new HashMap<>();
   private Map<String, String> containers = new HashMap<>();
 
+  protected final UsedOperatingSystem usedOs;
+
+  /**
+   * Enum for the configuration of the used OS
+   * 
+   * @author Fedor Smirnov
+   */
+  public enum UsedOperatingSystem {
+    Windows, Unix
+  }
+
   /**
    * Constructs an instance of ContainerManagerDockerAPI. Creates a connection to
    * a local Docker client and creates a network, iff it doen't already exist, to
    * be used by the function containers.
    */
-  public ContainerManagerDockerAPI(VertxProvider vProv) {
+  public ContainerManagerDockerAPI(VertxProvider vProv, @Constant(value = "usedOs",
+      namespace = ContainerManagerDockerAPI.class) UsedOperatingSystem usedOs) {
+    this.usedOs = usedOs;
     this.client = getDockerClient();
     try {
       this.client.createNetworkCmd().withName(ConstantsManager.dockerNetwork)
           .withCheckDuplicate(true).exec();
     } catch (Exception e) {
-      logger.info("Docker network for function containers already exits! Make sure this is set up correctly!");
+      logger.info(
+          "Docker network for function containers already exits! Make sure this is set up correctly!");
     }
     this.httpClient = WebClient.create(vProv.getVertx());
   }
@@ -69,32 +84,28 @@ public class ContainerManagerDockerAPI implements ContainerManager {
    */
   protected final DockerClient getDockerClient() {
     DockerClientConfig config;
-
-    if (System.getProperty("os.name").equals("Windows") ||
-      System.getenv().getOrDefault("HOST_CONNECTION_TYPE", "tcp").equals("tcp")) {
-
+    if (usedOs.equals(UsedOperatingSystem.Windows)) {
       logger.info("Using TCP connection to Docker Host.");
-      config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-        .withDockerHost("tcp://" + ConstantsManager.getDockerUri() + ":" + ConstantsManager.defaultDockerHTTPPort)
-        .withDockerTlsVerify(false)
-        .build();
-    } else {
+      config =
+          DefaultDockerClientConfig
+              .createDefaultConfigBuilder().withDockerHost("tcp://"
+                  + ConstantsManager.getDockerUri() + ":" + ConstantsManager.defaultDockerHTTPPort)
+              .withDockerTlsVerify(false).build();
+    } else if(usedOs.equals(UsedOperatingSystem.Unix)) {
       logger.info("Using UNIX Socket for connecting to Docker Host.");
       config = DefaultDockerClientConfig.createDefaultConfigBuilder()
           .withDockerHost("unix://" + ConstantsManager.defaultDockerUnixSocketLocation).build();
-     }
-
+    }else {
+      throw new IllegalArgumentException("Unknown OS configured: " + usedOs.name());
+    }
     var clientHttp = new ApacheDockerHttpClient.Builder().dockerHost(config.getDockerHost())
-      .sslConfig(config.getSSLConfig()).maxConnections(100).build();
-
+        .sslConfig(config.getSSLConfig()).maxConnections(100).build();
     Request request = Request.builder().method(Request.Method.GET).path("/_ping").build();
-
     try (Response response = clientHttp.execute(request)) {
       if (response.getStatusCode() != 200) {
         throw new IllegalStateException("Ping to Docker API failed.");
       }
     }
-
     return DockerClientImpl.getInstance(config, clientHttp);
   }
 
