@@ -156,6 +156,15 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
   @Override
   public void initImage(String imageName) {
+    this.client.listContainersCmd().exec()
+      .forEach(c -> logger.info("Already running: " + c.getImage()));
+
+    if (this.client.listContainersCmd().exec().stream()
+      .anyMatch(c -> c.getImage().equals(imageName))) {
+      // Return if an image is already running.
+      return;
+    }
+
     this.pullImage(imageName);
 
     final int port = 8800 + functions.size();
