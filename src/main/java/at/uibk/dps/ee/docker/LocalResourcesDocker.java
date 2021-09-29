@@ -7,12 +7,12 @@ import com.google.inject.Singleton;
 import at.uibk.dps.ee.core.ContainerManager;
 import at.uibk.dps.ee.core.LocalResources;
 import at.uibk.dps.ee.guice.container.ContainerManagerProvider;
+import at.uibk.dps.ee.model.graph.MappingsConcurrent;
 import at.uibk.dps.ee.model.graph.SpecificationProvider;
 import at.uibk.dps.ee.model.properties.PropertyServiceMapping;
 import at.uibk.dps.ee.model.properties.PropertyServiceMapping.EnactmentMode;
 import at.uibk.dps.ee.model.properties.PropertyServiceMappingLocal;
 import net.sf.opendse.model.Mapping;
-import net.sf.opendse.model.Mappings;
 import net.sf.opendse.model.Resource;
 import net.sf.opendse.model.Task;
 
@@ -26,7 +26,7 @@ import net.sf.opendse.model.Task;
 @Singleton
 public class LocalResourcesDocker implements LocalResources {
 
-  protected final Mappings<Task, Resource> mappings;
+  protected final MappingsConcurrent mappings;
   protected final ContainerManager containerManager;
   protected final Set<String> images = new HashSet<>();
 
