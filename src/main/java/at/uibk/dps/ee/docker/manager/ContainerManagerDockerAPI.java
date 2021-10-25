@@ -82,11 +82,11 @@ public class ContainerManagerDockerAPI implements ContainerManager {
         var id = container.getId();
         containers.put(container.getImage(), container.getId());
 
-        var exposedPort = this.client.inspectContainerCmd(id).exec().getNetworkSettings().getPorts().getBindings()
-          .keySet().stream().findFirst().orElseThrow(RuntimeException::new);
-        functions.put(container.getImage(), exposedPort.getPort());
+        var hostPortSpec = this.client.inspectContainerCmd(id).exec().getNetworkSettings().getPorts().getBindings()
+          .values().stream().findFirst().orElseThrow(RuntimeException::new)[0].getHostPortSpec();
+        functions.put(container.getImage(), Integer.parseInt(hostPortSpec));
 
-        logger.info("Discovered: " + container.getImage() + ", at " + exposedPort.getPort());
+        logger.info("Discovered function " + container.getImage() + ", at port " + Integer.parseInt(hostPortSpec));
       });
 
     this.httpClient = WebClient.create(vProv.getVertx());
@@ -132,6 +132,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     if (port.isEmpty()) {
       return Future.failedFuture("Function not available.");
     }
+
     Promise<JsonObject> resultPromise = Promise.promise();
     httpClient.postAbs(getContainerAddress(imageName, port.get()).toASCIIString())
         .sendJson(new io.vertx.core.json.JsonObject(functionInput.toString()))
