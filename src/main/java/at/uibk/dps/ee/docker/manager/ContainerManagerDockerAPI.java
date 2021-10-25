@@ -2,12 +2,15 @@ package at.uibk.dps.ee.docker.manager;
 
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectContainerCmd;
+import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.PortBinding;
@@ -72,6 +75,20 @@ public class ContainerManagerDockerAPI implements ContainerManager {
       logger.info(
           "Docker network for function containers already exits! Make sure this is set up correctly!");
     }
+
+    // Check for already running functions.
+    this.client.listContainersCmd().withNetworkFilter(List.of(ConstantsManager.dockerNetwork)).exec()
+      .forEach(container -> {
+        var id = container.getId();
+        containers.put(container.getImage(), container.getId());
+
+        var exposedPort = this.client.inspectContainerCmd(id).exec().getNetworkSettings().getPorts().getBindings()
+          .keySet().stream().findFirst().orElseThrow(RuntimeException::new);
+        functions.put(container.getImage(), exposedPort.getPort());
+
+        logger.info("Discovered: " + container.getImage() + ", at " + exposedPort.getPort());
+      });
+
     this.httpClient = WebClient.create(vProv.getVertx());
   }
 
@@ -95,7 +112,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
       logger.info("Using UNIX Socket for connecting to Docker Host.");
       config = DefaultDockerClientConfig.createDefaultConfigBuilder()
           .withDockerHost("unix://" + ConstantsManager.defaultDockerUnixSocketLocation).build();
-    }else {
+    } else {
       throw new IllegalArgumentException("Unknown OS configured: " + usedOs.name());
     }
     var clientHttp = new ApacheDockerHttpClient.Builder().dockerHost(config.getDockerHost())
@@ -154,20 +171,26 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     }
   }
 
+  /**
+   * @return next free port to be used by function container.
+   */
+  private int getNextPort() {
+    var currentMaxPort = this.functions.values().stream().max(Integer::compare);
+    return currentMaxPort.orElse(ConstantsManager.firstFunctionExposedPort) + 1;
+  }
+
   @Override
   public void initImage(String imageName) {
-    this.client.listContainersCmd().exec()
-      .forEach(c -> logger.info("Already running: " + c.getImage()));
-
+    // Return if an image is already running.
     if (this.client.listContainersCmd().exec().stream()
       .anyMatch(c -> c.getImage().equals(imageName))) {
-      // Return if an image is already running.
+      logger.info("Already running: " + imageName);
       return;
     }
 
     this.pullImage(imageName);
 
-    final int port = 8800 + functions.size();
+    final int port = getNextPort();
 
     HostConfig hostConfig =
         HostConfig.newHostConfig().withNetworkMode(ConstantsManager.dockerNetwork).withPortBindings(
