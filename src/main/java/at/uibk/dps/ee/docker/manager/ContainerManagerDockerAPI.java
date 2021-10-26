@@ -77,8 +77,15 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     }
 
     // Check for already running functions.
-    this.client.listContainersCmd().withNetworkFilter(List.of(ConstantsManager.dockerNetwork)).exec()
+    this.client.listContainersCmd().withShowAll(true).withNetworkFilter(List.of(ConstantsManager.dockerNetwork)).exec()
       .forEach(container -> {
+        // Remove function container if container isn't running.
+        if (!container.getState().equals("running")) {
+          this.client.removeContainerCmd(container.getId()).withForce(true).exec();
+          logger.info("Removed non-running existing function " + container.getImage());
+          return;
+        }
+
         var id = container.getId();
         containers.put(container.getImage(), container.getId());
 
