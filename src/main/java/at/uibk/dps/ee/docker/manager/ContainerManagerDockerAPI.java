@@ -11,6 +11,7 @@ import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerCmd;
 import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.PortBinding;
@@ -174,8 +175,15 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
     try {
       res.awaitCompletion();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+    } catch (NotFoundException ne) {
+      logger.warn("Error pulling image " + imageName + " from registry. Testing if image is available locally.");
+
+      // Checks if image is available. Would throw another exception if it isn't.
+      this.client.inspectImageCmd(imageName).exec();
+
+      logger.warn("Image " + imageName + " is available locally!");
+    } catch (InterruptedException ie) {
+      //ie.printStackTrace();
     }
   }
 
