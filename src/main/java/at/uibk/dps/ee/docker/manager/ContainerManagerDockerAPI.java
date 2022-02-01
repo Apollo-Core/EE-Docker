@@ -9,6 +9,7 @@ import java.util.Optional;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.PortBinding;
@@ -75,24 +76,27 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     }
 
     // Check for already running functions.
-    this.client.listContainersCmd().withShowAll(true).withNetworkFilter(List.of(ConstantsManager.dockerNetwork)).exec()
-      .forEach(container -> {
-        // Remove function container if container isn't running.
-        if (!container.getState().equals("running")) {
-          this.client.removeContainerCmd(container.getId()).withForce(true).exec();
-          logger.info("Removed non-running existing function " + container.getImage());
-          return;
-        }
+    this.client.listContainersCmd().withShowAll(true)
+        .withNetworkFilter(List.of(ConstantsManager.dockerNetwork)).exec().forEach(container -> {
+          // Remove function container if container isn't running.
+          if (!container.getState().equals("running")) {
+            this.client.removeContainerCmd(container.getId()).withForce(true).exec();
+            logger.info("Removed non-running existing function " + container.getImage());
+            return;
+          }
 
-        var id = container.getId();
-        containers.put(container.getImage(), container.getId());
+          var id = container.getId();
+          containers.put(container.getImage(), container.getId());
 
-        var hostPortSpec = this.client.inspectContainerCmd(id).exec().getNetworkSettings().getPorts().getBindings()
-          .values().stream().findFirst().orElseThrow(RuntimeException::new)[0].getHostPortSpec();
-        functions.put(container.getImage(), Integer.parseInt(hostPortSpec));
+          var hostPortSpec =
+              this.client.inspectContainerCmd(id).exec().getNetworkSettings().getPorts()
+                  .getBindings().values().stream().findFirst().orElseThrow(RuntimeException::new)[0]
+                      .getHostPortSpec();
+          functions.put(container.getImage(), Integer.parseInt(hostPortSpec));
 
-        logger.info("Discovered function " + container.getImage() + ", at port " + Integer.parseInt(hostPortSpec));
-      });
+          logger.info("Discovered function " + container.getImage() + ", at port "
+              + Integer.parseInt(hostPortSpec));
+        });
 
     this.httpClient = WebClient.create(vProv.getVertx());
   }
@@ -113,7 +117,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
               .createDefaultConfigBuilder().withDockerHost("tcp://"
                   + ConstantsManager.getDockerUri() + ":" + ConstantsManager.defaultDockerHTTPPort)
               .withDockerTlsVerify(false).build();
-    } else if(usedOs.equals(UsedOperatingSystem.Unix)) {
+    } else if (usedOs.equals(UsedOperatingSystem.Unix)) {
       logger.info("Using UNIX Socket for connecting to Docker Host.");
       config = DefaultDockerClientConfig.createDefaultConfigBuilder()
           .withDockerHost("unix://" + ConstantsManager.defaultDockerUnixSocketLocation).build();
@@ -172,8 +176,16 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
     try {
       res.awaitCompletion();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+    } catch (NotFoundException ne) {
+      logger.warn("Error pulling image " + imageName
+          + " from registry. Testing if image is available locally.");
+
+      // Checks if image is available. Would throw another exception if it isn't.
+      this.client.inspectImageCmd(imageName).exec();
+
+      logger.warn("Image " + imageName + " is available locally!");
+    } catch (InterruptedException ie) {
+      // ie.printStackTrace();
     }
   }
 
@@ -189,7 +201,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   public void initImage(String imageName) {
     // Return if an image is already running.
     if (this.client.listContainersCmd().exec().stream()
-      .anyMatch(c -> c.getImage().equals(imageName))) {
+        .anyMatch(c -> c.getImage().equals(imageName))) {
       logger.info("Already running: " + imageName);
       return;
     }
