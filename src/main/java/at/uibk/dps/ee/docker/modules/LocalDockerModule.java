@@ -2,7 +2,6 @@ package at.uibk.dps.ee.docker.modules;
 
 import org.opt4j.core.config.annotations.Info;
 import org.opt4j.core.config.annotations.Order;
-import org.opt4j.core.config.annotations.Required;
 import at.uibk.dps.ee.docker.LocalDockerContainers;
 import at.uibk.dps.ee.docker.functions.FunctionFactoryLocalDocker;
 import at.uibk.dps.ee.docker.manager.ContainerManagerDockerAPI.UsedOperatingSystem;
@@ -17,7 +16,6 @@ public class LocalDockerModule extends FunctionModule {
 
   @Order(1)
   @Info("The operating system configured on the device running the containers.")
-  @Required(property = "dockerManager", elements = "DockerApi")
   public UsedOperatingSystem usedOs = UsedOperatingSystem.Unix;
 
   @Override
