@@ -2,8 +2,10 @@ if(startParameter.projectProperties.containsKey("local")) {
   include 'EE-Guice'
   include 'EE-Core'
   include 'EE-Model'
+  include 'EE-Enactables'
 
   project (':EE-Core').projectDir = new File(settingsDir, "../EE-Core")
   project (':EE-Guice').projectDir = new File(settingsDir, "../EE-Guice")
   project (':EE-Model').projectDir = new File(settingsDir, "../EE-Model")
+  project (':EE-Enactables').projectDir = new File(settingsDir, "../EE-Enactables")
 }
