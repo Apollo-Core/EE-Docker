@@ -1,6 +1,6 @@
 package at.uibk.dps.ee.docker.server.routes;
 
-import at.uibk.dps.ee.core.ContainerManager;
+import at.uibk.dps.ee.docker.manager.ContainerManager;
 import at.uibk.dps.ee.docker.server.ConstantsServerContainer;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerResponse;

@@ -3,7 +3,7 @@ package at.uibk.dps.ee.docker.server;
 import org.opt4j.core.start.Constant;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import at.uibk.dps.ee.guice.container.ContainerManagerProvider;
+import at.uibk.dps.ee.docker.manager.ContainerManagerProvider;
 import io.vertx.core.Vertx;
 
 /**

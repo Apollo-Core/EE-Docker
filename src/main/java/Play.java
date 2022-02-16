@@ -1,5 +1,5 @@
 
-import at.uibk.dps.ee.core.ContainerManager;
+import at.uibk.dps.ee.docker.manager.ContainerManager;
 import at.uibk.dps.ee.docker.manager.ContainerManagerDockerAPI;
 import at.uibk.dps.ee.docker.manager.ContainerManagerDockerAPI.UsedOperatingSystem;
 import at.uibk.dps.ee.docker.server.ContainerServer;

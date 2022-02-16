@@ -22,10 +22,10 @@ import com.github.dockerjava.transport.DockerHttpClient.Request;
 import com.github.dockerjava.transport.DockerHttpClient.Response;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import at.uibk.dps.ee.core.ContainerManager;
 import at.uibk.dps.ee.guice.starter.VertxProvider;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
 import org.opt4j.core.start.Constant;
 import org.slf4j.Logger;
@@ -43,6 +43,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   private final DockerClient client;
 
   protected final WebClient httpClient;
+  protected final Vertx vertx;
 
   private Map<String, Integer> functions = new HashMap<>();
   private Map<String, String> containers = new HashMap<>();
@@ -98,7 +99,8 @@ public class ContainerManagerDockerAPI implements ContainerManager {
               + Integer.parseInt(hostPortSpec));
         });
 
-    this.httpClient = WebClient.create(vProv.getVertx());
+    this.vertx = vProv.getVertx();
+    this.httpClient = WebClient.create(vertx);
   }
 
   /**
@@ -198,7 +200,14 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   }
 
   @Override
-  public void initImage(String imageName) {
+  public Future<String> initImage(String imageName) {
+    return vertx.executeBlocking(promise -> {
+      initImageBlocking(imageName);
+      promise.complete(imageName);
+    });
+  }
+
+  protected void initImageBlocking(String imageName) {
     // Return if an image is already running.
     if (this.client.listContainersCmd().exec().stream()
         .anyMatch(c -> c.getImage().equals(imageName))) {
@@ -232,7 +241,14 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   }
 
   @Override
-  public void closeImage(String imageName) {
+  public Future<String> closeImage(String imageName) {
+    return vertx.executeBlocking(promise -> {
+      closeImageBlocking(imageName);
+      promise.complete(imageName);
+    });
+  }
+
+  protected void closeImageBlocking(String imageName) {
     this.client.removeContainerCmd(this.containers.get(imageName)).withForce(true).exec();
   }
 }
