@@ -5,7 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
@@ -49,6 +50,8 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   private Map<String, String> containers = new HashMap<>();
 
   protected final UsedOperatingSystem usedOs;
+
+  protected final ExecutorService blockingExecutor = Executors.newCachedThreadPool();
 
   /**
    * Enum for the configuration of the used OS
@@ -201,13 +204,15 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
   @Override
   public Future<String> initImage(String imageName) {
-    return vertx.executeBlocking(promise -> {
+    Promise<String> resultPromise = Promise.promise();
+    blockingExecutor.execute(() -> {
       initImageBlocking(imageName);
-      promise.complete(imageName);
+      resultPromise.complete(imageName);
     });
+    return resultPromise.future();
   }
 
-  protected void initImageBlocking(String imageName) {
+  protected synchronized void initImageBlocking(String imageName) {
     // Return if an image is already running.
     if (this.client.listContainersCmd().exec().stream()
         .anyMatch(c -> c.getImage().equals(imageName))) {
@@ -242,13 +247,15 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
   @Override
   public Future<String> closeImage(String imageName) {
-    return vertx.executeBlocking(promise -> {
+    Promise<String> resultPromise = Promise.promise();
+    blockingExecutor.execute(() -> {
       closeImageBlocking(imageName);
-      promise.complete(imageName);
+      resultPromise.complete(imageName);
     });
+    return resultPromise.future();
   }
 
-  protected void closeImageBlocking(String imageName) {
+  protected synchronized void closeImageBlocking(String imageName) {
     this.client.removeContainerCmd(this.containers.get(imageName)).withForce(true).exec();
   }
 }
