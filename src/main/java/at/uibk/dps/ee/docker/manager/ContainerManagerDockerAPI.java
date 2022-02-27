@@ -1,20 +1,10 @@
 package at.uibk.dps.ee.docker.manager;
 
-import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import at.uibk.dps.ee.guice.starter.VertxProvider;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.exception.NotFoundException;
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.HostConfig;
-import com.github.dockerjava.api.model.PortBinding;
-import com.github.dockerjava.api.model.PullResponseItem;
+import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
@@ -23,7 +13,7 @@ import com.github.dockerjava.transport.DockerHttpClient.Request;
 import com.github.dockerjava.transport.DockerHttpClient.Response;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import at.uibk.dps.ee.guice.starter.VertxProvider;
+import com.google.inject.Singleton;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -32,12 +22,19 @@ import org.opt4j.core.start.Constant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * A {@link ContainerManager} based on the `docker-java` API.
  * (https://github.com/docker-java/docker-java).
  *
  * @author Lukas Dötlinger
  */
+@Singleton
 public class ContainerManagerDockerAPI implements ContainerManager {
 
   protected final Logger logger = LoggerFactory.getLogger(ContainerManagerDockerAPI.class);
@@ -48,10 +45,9 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
   private Map<String, Integer> functions = new HashMap<>();
   private Map<String, String> containers = new HashMap<>();
+  private int currentMaxPort = ConstantsManager.firstFunctionExposedPort + 1;
 
   protected final UsedOperatingSystem usedOs;
-
-  protected final ExecutorService blockingExecutor = Executors.newCachedThreadPool();
 
   /**
    * Enum for the configuration of the used OS
@@ -93,13 +89,13 @@ public class ContainerManagerDockerAPI implements ContainerManager {
           containers.put(container.getImage(), container.getId());
 
           var hostPortSpec =
-              this.client.inspectContainerCmd(id).exec().getNetworkSettings().getPorts()
+            Integer.parseInt(this.client.inspectContainerCmd(id).exec().getNetworkSettings().getPorts()
                   .getBindings().values().stream().findFirst().orElseThrow(RuntimeException::new)[0]
-                      .getHostPortSpec();
-          functions.put(container.getImage(), Integer.parseInt(hostPortSpec));
+                      .getHostPortSpec());
+          functions.put(container.getImage(), hostPortSpec);
 
-          logger.info("Discovered function " + container.getImage() + ", at port "
-              + Integer.parseInt(hostPortSpec));
+          logger.info("Discovered function {} at port {} with id {}.", container.getImage(), hostPortSpec, id);
+          this.currentMaxPort = Math.max(hostPortSpec, this.currentMaxPort);
         });
 
     this.vertx = vProv.getVertx();
@@ -148,9 +144,12 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     }
 
     Promise<JsonObject> resultPromise = Promise.promise();
+    logger.info("Local function {} triggerred.", imageName);
+
     httpClient.postAbs(getContainerAddress(imageName, port.get()).toASCIIString())
         .sendJson(new io.vertx.core.json.JsonObject(functionInput.toString()))
         .onSuccess(asyncRes -> {
+          logger.info("Local function {} finished.", imageName);
           JsonObject jsonResult =
               JsonParser.parseString(asyncRes.body().toString()).getAsJsonObject();
           resultPromise.complete(jsonResult);
@@ -176,86 +175,88 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     }
   }
 
-  private void pullImage(String imageName) {
-    ResultCallback.Adapter<PullResponseItem> res = this.client.pullImageCmd(imageName).start();
+  private Future<String> pullImage(String imageName) {
+    Promise<String> pullPromise = Promise.promise();
 
-    try {
-      res.awaitCompletion();
-    } catch (NotFoundException ne) {
-      logger.warn("Error pulling image " + imageName
-          + " from registry. Testing if image is available locally.");
+    ResultCallback.Adapter<PullResponseItem> callback = new ResultCallback.Adapter<PullResponseItem>() {
+      public void onNext(PullResponseItem pullResponse) {
+        if (pullResponse.isErrorIndicated()) {
+          logger.warn("Error pulling image " + imageName
+            + " from registry. Testing if image is available locally.");
 
-      // Checks if image is available. Would throw another exception if it isn't.
-      this.client.inspectImageCmd(imageName).exec();
+          // Checks if image is available. Would throw another exception if it isn't.
+          client.inspectImageCmd(imageName).exec();
 
-      logger.warn("Image " + imageName + " is available locally!");
-    } catch (InterruptedException ie) {
-      // ie.printStackTrace();
-    }
+          logger.warn("Image " + imageName + " is available locally!");
+        }
+        logger.info("Pulled image {}.", imageName);
+        pullPromise.complete(imageName);
+      }
+    };
+
+    this.client.pullImageCmd(imageName).exec(callback);
+
+    return pullPromise.future();
   }
 
   /**
    * @return next free port to be used by function container.
    */
-  private int getNextPort() {
-    var currentMaxPort = this.functions.values().stream().max(Integer::compare);
-    return currentMaxPort.orElse(ConstantsManager.firstFunctionExposedPort) + 1;
+  private synchronized int getNextPort() {
+    return currentMaxPort++;
   }
 
   @Override
   public Future<String> initImage(String imageName) {
     Promise<String> resultPromise = Promise.promise();
-    blockingExecutor.execute(() -> {
-      initImageBlocking(imageName);
-      resultPromise.complete(imageName);
-    });
-    return resultPromise.future();
-  }
 
-  protected synchronized void initImageBlocking(String imageName) {
     // Return if an image is already running.
     if (this.client.listContainersCmd().exec().stream()
         .anyMatch(c -> c.getImage().equals(imageName))) {
       logger.info("Already running: " + imageName);
-      return;
+      resultPromise.complete(imageName);
+      return resultPromise.future();
     }
-
-    this.pullImage(imageName);
-
     final int port = getNextPort();
 
-    HostConfig hostConfig =
+    this.pullImage(imageName).onComplete(r -> {
+      HostConfig hostConfig =
         HostConfig.newHostConfig().withNetworkMode(ConstantsManager.dockerNetwork).withPortBindings(
-            PortBinding.parse(port + ":" + ConstantsManager.defaultFunctionPort + "/tcp"));
+          PortBinding.parse(port + ":" + ConstantsManager.defaultFunctionPort + "/tcp"));
 
-    CreateContainerResponse container = this.client.createContainerCmd(imageName)
+      CreateContainerResponse container = this.client.createContainerCmd(imageName)
         .withExposedPorts(ExposedPort.tcp(ConstantsManager.defaultFunctionPort))
         .withHostConfig(hostConfig).withName(imageName.replaceAll("/", "-")).exec();
 
-    String containerId = container.getId();
-    this.client.startContainerCmd(containerId).exec();
+      String containerId = container.getId();
+      this.client.startContainerCmd(containerId).exec();
 
-    try {
-      this.client.waitContainerCmd(container.getId()).start().awaitStarted();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+      ResultCallback.Adapter<WaitResponse> callback = new ResultCallback.Adapter<WaitResponse>() {
+        public void onNext(WaitResponse waitResponse) {
+          functions.put(imageName, port);
+          containers.put(imageName, containerId);
+          resultPromise.complete(imageName);
+        }
+      };
 
-    this.functions.put(imageName, port);
-    this.containers.put(imageName, containerId);
+      try {
+        this.client.waitContainerCmd(containerId).exec(callback);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    });
+
+    return resultPromise.future();
   }
 
   @Override
   public Future<String> closeImage(String imageName) {
     Promise<String> resultPromise = Promise.promise();
-    blockingExecutor.execute(() -> {
-      closeImageBlocking(imageName);
-      resultPromise.complete(imageName);
-    });
-    return resultPromise.future();
-  }
 
-  protected synchronized void closeImageBlocking(String imageName) {
+    logger.info("Removing container {}.", imageName);
     this.client.removeContainerCmd(this.containers.get(imageName)).withForce(true).exec();
+    resultPromise.complete();
+
+    return resultPromise.future();
   }
 }
