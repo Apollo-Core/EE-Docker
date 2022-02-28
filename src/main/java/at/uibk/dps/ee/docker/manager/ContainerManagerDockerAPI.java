@@ -88,13 +88,14 @@ public class ContainerManagerDockerAPI implements ContainerManager {
           var id = container.getId();
           containers.put(container.getImage(), container.getId());
 
-          var hostPortSpec =
-            Integer.parseInt(this.client.inspectContainerCmd(id).exec().getNetworkSettings().getPorts()
+          var hostPortSpec = Integer
+              .parseInt(this.client.inspectContainerCmd(id).exec().getNetworkSettings().getPorts()
                   .getBindings().values().stream().findFirst().orElseThrow(RuntimeException::new)[0]
                       .getHostPortSpec());
           functions.put(container.getImage(), hostPortSpec);
 
-          logger.info("Discovered function {} at port {} with id {}.", container.getImage(), hostPortSpec, id);
+          logger.info("Discovered function {} at port {} with id {}.", container.getImage(),
+              hostPortSpec, id);
           this.currentMaxPort = Math.max(hostPortSpec, this.currentMaxPort);
         });
 
@@ -178,22 +179,26 @@ public class ContainerManagerDockerAPI implements ContainerManager {
   private Future<String> pullImage(String imageName) {
     Promise<String> pullPromise = Promise.promise();
 
-    ResultCallback.Adapter<PullResponseItem> callback = new ResultCallback.Adapter<PullResponseItem>() {
-      public void onNext(PullResponseItem pullResponse) {
-        if (pullResponse.isErrorIndicated()) {
-          logger.warn("Error pulling image " + imageName
-            + " from registry. Testing if image is available locally.");
+    ResultCallback.Adapter<PullResponseItem> callback =
+        new ResultCallback.Adapter<PullResponseItem>() {
+          public void onNext(PullResponseItem pullResponse) {
+            if (pullResponse.isErrorIndicated()) {
+              logger.warn("Error pulling image " + imageName
+                  + " from registry. Testing if image is available locally.");
 
-          // Checks if image is available. Would throw another exception if it isn't.
-          client.inspectImageCmd(imageName).exec();
+              // Checks if image is available. Would throw another exception if it isn't.
+              client.inspectImageCmd(imageName).exec();
 
-          logger.warn("Image " + imageName + " is available locally!");
-        }
-        logger.info("Pulled image {}.", imageName);
-        pullPromise.complete(imageName);
-      }
-    };
+              logger.warn("Image " + imageName + " is available locally!");
+            } else if (pullResponse.isPullSuccessIndicated()) {
+              logger.info("Pulled image {}.", imageName);
+              logger.info("Returned pull status {}.", pullResponse.getStatus());
+              pullPromise.complete(imageName);
+            }
+          }
+        };
 
+    logger.info("Pull command image {}", imageName);
     this.client.pullImageCmd(imageName).exec(callback);
 
     return pullPromise.future();
@@ -220,30 +225,45 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     final int port = getNextPort();
 
     this.pullImage(imageName).onComplete(r -> {
-      HostConfig hostConfig =
-        HostConfig.newHostConfig().withNetworkMode(ConstantsManager.dockerNetwork).withPortBindings(
-          PortBinding.parse(port + ":" + ConstantsManager.defaultFunctionPort + "/tcp"));
+      HostConfig hostConfig = HostConfig.newHostConfig()
+          .withNetworkMode(ConstantsManager.dockerNetwork).withPortBindings(
+              PortBinding.parse(port + ":" + ConstantsManager.defaultFunctionPort + "/tcp"));
 
       CreateContainerResponse container = this.client.createContainerCmd(imageName)
-        .withExposedPorts(ExposedPort.tcp(ConstantsManager.defaultFunctionPort))
-        .withHostConfig(hostConfig).withName(imageName.replaceAll("/", "-")).exec();
+          .withExposedPorts(ExposedPort.tcp(ConstantsManager.defaultFunctionPort))
+          .withHostConfig(hostConfig).withName(imageName.replaceAll("/", "-")).exec();
 
+      logger.info("Starting container");
       String containerId = container.getId();
       this.client.startContainerCmd(containerId).exec();
 
-      ResultCallback.Adapter<WaitResponse> callback = new ResultCallback.Adapter<WaitResponse>() {
-        public void onNext(WaitResponse waitResponse) {
-          functions.put(imageName, port);
-          containers.put(imageName, containerId);
-          resultPromise.complete(imageName);
-        }
-      };
+      vertx.setTimer(500, timerEvent -> {
+        functions.put(imageName, port);
+        containers.put(imageName, containerId);
+        logger.info("Waiting done");
+        resultPromise.complete(imageName);
+      });
 
-      try {
-        this.client.waitContainerCmd(containerId).exec(callback);
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+      // It would be great if this way of starting and waiting for the container would
+      // work,
+      // but, at least at my machine, no wait events ever arrive
+
+      // ResultCallback.Adapter<WaitResponse> callback = new
+      // ResultCallback.Adapter<WaitResponse>() {
+      // public void onNext(WaitResponse waitResponse) {
+      // functions.put(imageName, port);
+      // containers.put(imageName, containerId);
+      // logger.info("Waiting done");
+      // resultPromise.complete(imageName);
+      // }
+      // };
+      //
+      // try {
+      // logger.info("Waiting for container start");
+      // this.client.waitContainerCmd(containerId).exec(callback);
+      // } catch (Exception e) {
+      // e.printStackTrace();
+      // }
     });
 
     return resultPromise.future();
