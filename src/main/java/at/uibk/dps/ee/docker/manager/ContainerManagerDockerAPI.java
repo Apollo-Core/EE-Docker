@@ -4,6 +4,7 @@ import at.uibk.dps.ee.guice.starter.VertxProvider;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.WaitContainerResultCallback;
 import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
@@ -137,6 +138,13 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     return DockerClientImpl.getInstance(config, clientHttp);
   }
 
+  /**
+   * Executes a function running inside a container with a given input.
+   * @param imageName the name of the image containing the function
+   * @param functionInput the function input
+   *
+   * @return a future to be completed with the function result
+   */
   @Override
   public Future<JsonObject> runImage(String imageName, JsonObject functionInput) {
     Optional<Integer> port = Optional.ofNullable(this.functions.get(imageName));
@@ -176,6 +184,12 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     }
   }
 
+  /**
+   * Pulls an image from the registry selected at the system.
+   * @param imageName which should be pulled
+   *
+   * @return a future to be completed if the pull was successful.
+   */
   private Future<String> pullImage(String imageName) {
     Promise<String> pullPromise = Promise.promise();
 
@@ -211,6 +225,12 @@ public class ContainerManagerDockerAPI implements ContainerManager {
     return currentMaxPort++;
   }
 
+  /**
+   * Starts a container for a function image.
+   * @param imageName the name of the image to be initialized
+   *
+   * @return a future to be completed if the image is running
+   */
   @Override
   public Future<String> initImage(String imageName) {
     Promise<String> resultPromise = Promise.promise();
@@ -237,38 +257,42 @@ public class ContainerManagerDockerAPI implements ContainerManager {
       String containerId = container.getId();
       this.client.startContainerCmd(containerId).exec();
 
-      vertx.setTimer(500, timerEvent -> {
-        functions.put(imageName, port);
-        containers.put(imageName, containerId);
-        logger.info("Waiting done");
-        resultPromise.complete(imageName);
-      });
-
-      // It would be great if this way of starting and waiting for the container would
-      // work,
-      // but, at least at my machine, no wait events ever arrive
-
-      // ResultCallback.Adapter<WaitResponse> callback = new
-      // ResultCallback.Adapter<WaitResponse>() {
-      // public void onNext(WaitResponse waitResponse) {
-      // functions.put(imageName, port);
-      // containers.put(imageName, containerId);
-      // logger.info("Waiting done");
-      // resultPromise.complete(imageName);
-      // }
-      // };
-      //
-      // try {
-      // logger.info("Waiting for container start");
-      // this.client.waitContainerCmd(containerId).exec(callback);
-      // } catch (Exception e) {
-      // e.printStackTrace();
-      // }
+      functions.put(imageName, port);
+      waitOnContainer(resultPromise, containerId, imageName);
     });
 
     return resultPromise.future();
   }
 
+  /**
+   * Uses VertX timer to wait until a container is running.
+   * @param promise to be completed if container is running
+   * @param containerId of the container
+   */
+  public void waitOnContainer(Promise<String> promise, String containerId, String imageName) {
+    var res = this.client.inspectContainerCmd(containerId).exec();
+
+    if (Boolean.TRUE.equals(res.getState().getRunning())) {
+      // Wait for the function process to start inside the container.
+      vertx.setTimer(1000, e -> {
+        logger.info("running!");
+        containers.put(imageName, containerId);
+        promise.complete(imageName);
+      });
+    } else {
+      vertx.setTimer(50, e -> {
+        logger.info("waiting .......");
+        waitOnContainer(promise, containerId, imageName);
+      });
+    }
+  }
+
+  /**
+   * Removes the container for an image.
+   * @param imageName the image of the container
+   *
+   * @return a future
+   */
   @Override
   public Future<String> closeImage(String imageName) {
     Promise<String> resultPromise = Promise.promise();
