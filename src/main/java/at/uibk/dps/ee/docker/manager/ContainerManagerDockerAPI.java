@@ -4,7 +4,6 @@ import at.uibk.dps.ee.guice.starter.VertxProvider;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.WaitContainerResultCallback;
 import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
@@ -140,6 +139,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
   /**
    * Executes a function running inside a container with a given input.
+   * 
    * @param imageName the name of the image containing the function
    * @param functionInput the function input
    *
@@ -186,6 +186,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
   /**
    * Pulls an image from the registry selected at the system.
+   * 
    * @param imageName which should be pulled
    *
    * @return a future to be completed if the pull was successful.
@@ -227,6 +228,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
   /**
    * Starts a container for a function image.
+   * 
    * @param imageName the name of the image to be initialized
    *
    * @return a future to be completed if the image is running
@@ -266,6 +268,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
   /**
    * Uses VertX timer to wait until a container is running.
+   * 
    * @param promise to be completed if container is running
    * @param containerId of the container
    */
@@ -289,6 +292,7 @@ public class ContainerManagerDockerAPI implements ContainerManager {
 
   /**
    * Removes the container for an image.
+   * 
    * @param imageName the image of the container
    *
    * @return a future
